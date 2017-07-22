@@ -1,0 +1,42 @@
+
+[indentation]
+indent_width=3
+indent_type=2
+indent_hard_tab_width=8
+detect_indent=false
+detect_indent_width=false
+indent_mode=2
+
+[project]
+name=gsg
+base_path=/home/doi/dev/glesgl/
+description=
+file_patterns=
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=72
+
+[files]
+current_page=-1
+
+[build-menu]
+NF_00_LB=_Make
+NF_00_CM=make
+NF_00_WD=%p
+EX_00_LB=Futtat
+EX_00_CM=make test
+EX_00_WD=%p
+CFT_00_LB=_Fordítás
+CFT_00_CM=make
+CFT_00_WD=
+filetypes=C;Make;
+CFT_01_LB=Ö_sszeállítás
+CFT_01_CM=make
+CFT_01_WD=
+NF_01_LB=Egyedi cél készí_tése
+NF_01_CM=make
+NF_01_WD=
+MakeFT_00_LB=
+MakeFT_00_CM=
+MakeFT_00_WD=
