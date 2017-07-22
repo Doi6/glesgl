@@ -1,0 +1,7 @@
+*.o
+*.so
+*.so.1
+*.gch
+gsgx
+test/cube
+test/test
