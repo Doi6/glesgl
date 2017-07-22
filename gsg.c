@@ -62,11 +62,11 @@ extern void glTranslated( GLdouble x, GLdouble y, GLdouble z ) {
 }
 
 extern void glNormal3fv( const GLfloat * v ) {
-   gsggVector( GSGG_NORMAL, v[0], v[1], v[2], 1.0f );      
+   gsggNormal( v[0], v[1], v[2] );      
 }
 
 extern void glVertex3fv( const GLfloat * v ) {
-   gsggVector( GSGG_VERTEX, v[0], v[1], v[2], 1.0f );
+   gsggVertex( v[0], v[1], v[2] );
 }
 
 

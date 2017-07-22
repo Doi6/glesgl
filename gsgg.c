@@ -5,7 +5,9 @@
 
 #define INITSIZE 256
 
-typedef GLfloat gsggVect[4];
+typedef struct {
+   GLfloat x,y,z;
+} gsggVect;
 
 ARRDEF( gsggVect );
 
@@ -59,59 +61,8 @@ extern void glBegin( GLenum mode ) {
    gsgg->mode = mode;
 }
    
-void gsggDrawQuads() {
-   static int back[] = { -16, -15, -14, -13, -8, -7, -6, -5 };
-   /// make space
-   int vn = gsgg->verts->count;
-   gsgDebug("vn:%d\n", vn);
-   int vm = 2 * vn;
-   if ( gsgg->tmp->size < vm )
-      ARRSIZE( gsgg->tmp, GLfloat, vm );
-   /// create triangles
-   GLfloat *at = gsgg->verts->items;
-   GLfloat *dest = gsgg->tmp->items;
-   glVertexPointer( 4, GL_FLOAT, 0, dest );
-   int n = 0;
-   int m = 0;
-   for (; 0<vn; --vn,++n) {
-      *(dest++) = *(at++);
-      if (15 == n%16) {
-	 gsgDebug("15\n");
-	 for (m=0; m<8; ++m)
-	    *(dest++) = at[ back[m] ];
-      }
-   }
-//   gsgDebug("nnorm: %d\n", dest - gsgg->tmp->items );
-/*   for (n=0; n < vm / 16; ++n) {
-      at = gsgg->tmp->items + 12*n;
-      gsgDebug("tri: (%g,%g,%g),(%g,%g,%g),(%g,%g,%g)\n",
-         at[0], at[1], at[2], at[4], at[5], at[6], at[8], at[9], at[10] );
-   }
-*/
-   /// create normals
-   if ( 4 <= gsgg->norms->count ) {
-      while (gsgg->norms->count < gsgg->verts->count) {
-	 GLfloat f = gsgg->norms->items[ gsgg->norms->count-4 ];
-         ARRADD( gsgg->norms, GLfloat, f );
-      }
-      
-      at = gsgg->norms->items;
-      glNormalPointer( GL_FLOAT, 0, dest );
-      int nn = gsgg->norms->count / 4;
-      for (; 0<nn; --nn) {
-         for (m=4; 0<m; --m) {
-	    dest[4] = at[4];
-            *(dest++) = *(at++);
-         }
-         dest += 4;
-      }
-      gsgDebug("nnorm: %d\n", dest - gsgg->tmp->items );
-      glDrawArrays( GL_TRIANGLES, 0, gsgg->verts->count * 3 / 2 );   
-   }
-}   
-   
 void gsggDraw(GLenum mode) {
-   glVertexPointer( 4, GL_FLOAT, 0, gsgg->verts->items );
+   glVertexPointer( 3, GL_FLOAT, 0, gsgg->verts->items );
    glNormalPointer( GL_FLOAT, 0, gsgg->norms->items );
    glDrawArrays( mode, 0, gsgg->verts->count );
 }
@@ -130,19 +81,37 @@ void glEnd() {
    gsggClear();
 }
 
-   
-void gsggVector( int kind, GLfloat x, GLfloat y, GLfloat z, GLfloat w ) {
-   ARR( GLfloat ) * arr;
-   switch (kind) {
-      case GSGG_VERTEX: arr = gsgg->verts; break;
-      case GSGG_NORMAL: arr = gsgg->norms; break;
-      default:
-         gsgDie("Unknown kind: %d\n", kind );
+/// add vertices as triangles for drawing
+void gsggOnVertexQuad() {
+   ARR( gsggVect ) * arr = gsgg->verts;
+   int n = gsgg->verts->count;
+   if ( 4 == n % 6 ) {
+      gsggVect v = arr->items[n-4];
+      ARRADD( arr, gsggVect, v );
+      v = arr->items[n-2];
+      ARRADD( arr, gsggVect, v );
+      n += 2;
+      // each vertex should have a normal
+      int m = gsgg->norms->count;
+      if ( 0 < m ) {
+         v = gsgg->norms->items[m-1];
+	 while ( gsgg->norms->count < n )
+	    ARRADD( gsgg->norms, gsggVect, v );
+      }
    }
-   gsgDebug("vector %d (%g,%g,%g,%g)\n", kind, x, y, z, w );
-   ARRADD( arr, GLfloat, x );
-   ARRADD( arr, GLfloat, y );
-   ARRADD( arr, GLfloat, z );
-   ARRADD( arr, GLfloat, w );
-   gsgDebug("arrcnt: %d\n", arr->count );
+}      
+   
+void gsggVertex( GLfloat x, GLfloat y, GLfloat z ) {
+//   gsgDebug("vertex (%g,%g,%g,%g)\n", x, y, z, w );
+   gsggVect v = { x, y, z };
+   ARRADD( gsgg->verts, gsggVect, v );
+   switch ( gsgg->mode ) {
+      case GL_QUADS: gsggOnVertexQuad();
+   }
+}
+
+void gsggNormal( GLfloat x, GLfloat y, GLfloat z ) {
+//   gsgDebug("vertex (%g,%g,%g,%g)\n", x, y, z, w );
+   gsggVect v = { x, y, z };
+   ARRADD( gsgg->norms, gsggVect, v );
 }

@@ -307,3 +307,10 @@ void glXSwapBuffers( Display * dpy, GLXDrawable draw ) {
    if ( ! eglSwapBuffers( edpy, edraw ))
       gsgDie( "Cannot swap buffers: %x\n", eglGetError() );
 }
+
+void glXDestroyContext( Display * dpy, GLXContext gctx ) {
+   EGLDisplay edpy = gsgxGetDisplay( dpy, False );
+   EGLContext ectx = gsgxToEContext( gctx );
+   if ( eglDestroyContext( edpy, ectx )) 
+      ARRREMOVEBY( gsgxCtxs, gsgxCtx, gctx, gctx );
+}
