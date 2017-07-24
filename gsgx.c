@@ -11,6 +11,7 @@ Bool glXQueryExtension( Display * dpy,
    return True;
 }
 
+/*
 /// count how many attribs are in array
 int gsgxCountAttribs( const int * attrs ) {
    int ret = 0;
@@ -18,6 +19,7 @@ int gsgxCountAttribs( const int * attrs ) {
       ++ret;
    return ret;
 }
+*/
 
 /// convert glx attr to egl attr
 EGLint gsgxEAttr( int attr ) {
@@ -31,7 +33,9 @@ EGLint gsgxEAttr( int attr ) {
       case GLX_DEPTH_SIZE:  return EGL_DEPTH_SIZE;
       case GLX_VISUAL_ID:   return EGL_NATIVE_VISUAL_ID;
       case GLX_DOUBLEBUFFER:
-         return GSGX_UNSUPPORTED;
+      case GLX_RGBA:
+      case GLX_STEREO:
+         return GSGX_UNSUPPORTED_SINGLE;
       default:
          gsgDie( "Unknown attrib: %d", attr );
          return 0;
@@ -68,25 +72,30 @@ int gsgxGVal( EGLint eattr, EGLint val ) {
    return val;
 }
 
+ARRDEF( EGLint );
 
 /// convert glx attrib list to egl attrib list
 EGLint * gsgxConvertAttribs( const int * attrs ) {
    gsgDebug("gsgxConvertAttribs\n");
-   int i;
-   int n = gsgxCountAttribs( attrs );
-   EGLint * ret = ALLOCN( EGLint, 2*n+1 );
-   ret[ 2*n ] = EGL_NONE;
-   for (i=0; i < n; ++i ) {
-	  int attr = attrs[2*i];
-	  int eattr = gsgxEAttr( attr );
-	  if (GSGX_UNSUPPORTED == eattr) {
-	  	  ret[2*i] = EGL_CONFIG_ID;
-	  	  ret[2*i+1] = EGL_DONT_CARE;
-	  } else {
-	  	  ret[2*i] = eattr;
-     	  ret[2*i+1] = gsgxEVal( attr, attrs[2*i+1] );
+   static ARR( EGLint ) * arr = NULL;
+   if (NULL == arr)
+      ARRINIT( arr, EGLint, 32 );
+   arr->count = 0;
+   const int * at = attrs;       
+   while ( None != *at ) {
+//      gsgDebug("at: %d\n", *at);
+      int eattr = gsgxEAttr( *(at++) );
+      switch (eattr) {
+	 case GSGX_UNSUPPORTED_SINGLE: break;
+	 case GSGX_UNSUPPORTED: ++at; break;
+	 default:
+	    ARRADD( arr, EGLint, eattr );
+	    ARRADD( arr, EGLint, gsgxEVal( eattr, *(at++) ));
       }
    }
+   ARRADD( arr, EGLint, EGL_NONE );
+   EGLint * ret = ALLOCN( EGLint, arr->count );
+   COPYN( EGLint, arr->items, ret, arr->count );
    return ret;
 }
 
@@ -112,12 +121,12 @@ inline EGLContext gsgxToEContext( GLXContext gcont ) {
 
 /// dump config attributes
 void gsgxDumpEAttrs( EGLint * eattrs ) {
-	EGLint * at = eattrs;
-	while (*at != EGL_NONE) {
-	   gsgDebug("%x ", *at);
-	   ++at;
-	}
-	gsgDebug("\n");
+   EGLint * at = eattrs;
+   while (*at != EGL_NONE) {
+      gsgDebug("%x ", *at);
+      ++at;
+   }
+   gsgDebug("\n");
 }
 
 /// get and initialize display
@@ -201,9 +210,9 @@ int glXGetFBConfigAttrib( Display * dpy, GLXFBConfig config,
 
 /// list of contexts
 typedef struct {
-	GLXContext  gctx;
-	EGLConfig   ecfg;
-	EGLDisplay  edpy;
+   GLXContext  gctx;
+   EGLConfig   ecfg;
+   EGLDisplay  edpy;
 } gsgxCtx;
 
 ARRDEF( gsgxCtx );
@@ -212,24 +221,22 @@ ARR( gsgxCtx ) * gsgxCtxs = NULL;
 GLXContext glXCreateNewContext(	Display * dpy, GLXFBConfig config,
  	int render_type, GLXContext share_list, Bool direct)
 {
-	gsgDebug("glXCreateNewContext\n");
-	if (render_type == GLX_COLOR_INDEX_TYPE)
-		gsgDie( "Color index type not supported\n");
-	EGLDisplay edpy = gsgxGetDisplay( dpy, True );
-	EGLConfig econf = gsgxToEConfig( config );
-	EGLContext eshare = gsgxToEContext( share_list );
-//	EGLint eattrs [] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE };
-	gsgDebug("edpy: %x\n", edpy);
-	EGLContext ectx = eglCreateContext( edpy, econf, eshare, NULL );
-	gsgDebug("ectx:%x\n", ectx );
-	if ( EGL_NO_CONTEXT == ectx )
-	   gsgDie("Could not create context: %x\n", eglGetError() );
-	GLXContext ret = gsgxToGContext( ectx );
-	if (NULL == gsgxCtxs)
-	   ARRINIT( gsgxCtxs, gsgxCtx, 8 );
-	gsgxCtx gc = { .gctx = ret, .ecfg = econf, .edpy = edpy };
-	ARRADD( gsgxCtxs, gsgxCtx, gc );
-	return ret;
+   gsgDebug("glXCreateNewContext\n");
+   if (render_type == GLX_COLOR_INDEX_TYPE)
+      gsgDie( "Color index type not supported\n");
+   EGLDisplay edpy = gsgxGetDisplay( dpy, True );
+   EGLConfig econf = gsgxToEConfig( config );
+gsgDebug("econf:%x config:%x\n", econf, config );
+   EGLContext eshare = gsgxToEContext( share_list );
+   EGLContext ectx = eglCreateContext( edpy, econf, eshare, NULL );
+   if ( EGL_NO_CONTEXT == ectx )
+      gsgDie("Could not create context: %x\n", eglGetError() );
+   GLXContext ret = gsgxToGContext( ectx );
+   if (NULL == gsgxCtxs)
+      ARRINIT( gsgxCtxs, gsgxCtx, 8 );
+   gsgxCtx gc = { .gctx = ret, .ecfg = econf, .edpy = edpy };
+   ARRADD( gsgxCtxs, gsgxCtx, gc );
+   return ret;
 }
 
 Bool glXIsDirect( Display * dpy, GLXContext gctx ) {
@@ -251,9 +258,9 @@ EGLConfig gsgxEConfig( GLXContext ctx ) {
 }
 
 GLXContext gsgxGContext( EGLDisplay edpy ) {
-	ARRLOOKUP( gsgxCtxs, edpy, edpy, gctx );
-	gsgDie( "Unknown display: %x\n", edpy );
-	return NULL;
+   ARRLOOKUP( gsgxCtxs, edpy, edpy, gctx );
+   gsgDie( "Unknown display: %x\n", edpy );
+   return NULL;
 }
 
 /// list of surfaces
@@ -314,3 +321,60 @@ void glXDestroyContext( Display * dpy, GLXContext gctx ) {
    if ( eglDestroyContext( edpy, ectx )) 
       ARRREMOVEBY( gsgxCtxs, gsgxCtx, gctx, gctx );
 }
+
+XVisualInfo * glXChooseVisual( Display *dpy, int screen, 
+   int * attriblist ) 
+{
+   XVisualInfo * ret = NULL;
+   int nem;
+   GLXFBConfig * cfg = glXChooseFBConfig( dpy, screen, attriblist, & nem );
+   if ( cfg ) {
+      ret = glXGetVisualFromFBConfig( dpy, *cfg );
+      gsgFree( cfg );
+   }
+   return ret;
+}
+
+/// number of set bits in mask
+int gsgxMaskSize( unsigned long mask ) {
+   int ret = 0;
+   int n;
+   for (n=32; 0<n; --n)  {
+      if (mask & 1)
+         ++ret;
+      mask >>= 1;
+   }
+   return ret;
+}
+
+/// return attribute set by visual
+const int * gsgxAttrsByVisual( XVisualInfo * vis ) {
+   static int ret[32];
+   int *at = ret;
+   *(at++) = GLX_DEPTH_SIZE;
+   *(at++) = vis->depth;
+   *(at++) = GLX_RED_SIZE;
+   *(at++) = gsgxMaskSize( vis->red_mask );
+   *(at++) = GLX_GREEN_SIZE;
+   *(at++) = gsgxMaskSize( vis->green_mask );       
+   *(at++) = GLX_BLUE_SIZE;
+   *(at++) = gsgxMaskSize( vis->blue_mask );
+   *(at++) = None;
+   return ret;
+}
+
+
+GLXContext glXCreateContext( Display * dpy, 
+   XVisualInfo * vis, GLXContext share_list, Bool direct)
+{
+   gsgDebug("glXCreateContext\n");
+   int nem;
+   const int * attrs = gsgxAttrsByVisual( vis );
+   GLXFBConfig * cfg = glXChooseFBConfig( dpy, GSGX_DEFAULT_SCREEN, 
+      attrs, & nem );
+   return glXCreateNewContext( dpy, *cfg, GLX_RGBA_TYPE, share_list, 
+      direct );
+}
+
+   
+   
