@@ -1,9 +1,9 @@
-CL=gcc -lEGL -fPIC -shared -lGLESv1_CM
+CL=gcc -lEGL -fPIC -shared -Wl,-init,gsgInit
 C=gcc -Wall -c
-ITEMS = gsg gsgx gsgg
+ITEMS = gsg gsgx gsgg gsgl
 SO=libGL.so.1
 
-build: $(SO)
+build: $(SO) Makefile
 
 $(SO): $(ITEMS:=.o)
 	$(CL) -o $@ $^

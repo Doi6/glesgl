@@ -86,7 +86,10 @@ EGLint * gsgxConvertAttribs( const int * attrs ) {
 //      gsgDebug("at: %d\n", *at);
       int eattr = gsgxEAttr( *(at++) );
       switch (eattr) {
-	 case GSGX_UNSUPPORTED_SINGLE: break;
+	 case GSGX_UNSUPPORTED_SINGLE: 
+	    if (1 == *at)
+	       ++at; 
+	 break;
 	 case GSGX_UNSUPPORTED: ++at; break;
 	 default:
 	    ARRADD( arr, EGLint, eattr );
@@ -310,7 +313,7 @@ void glXSwapBuffers( Display * dpy, GLXDrawable draw ) {
    EGLDisplay edpy = gsgxGetDisplay( dpy, False );
    GLXContext gctx = gsgxGContext( edpy );
    EGLSurface edraw = gsgxToESurf( draw, gctx );
-   gsgDebug("draw: %x edraw:%x\n", draw, edraw );
+//   gsgDebug("draw: %x edraw:%x\n", draw, edraw );
    if ( ! eglSwapBuffers( edpy, edraw ))
       gsgDie( "Cannot swap buffers: %x\n", eglGetError() );
 }
@@ -376,5 +379,18 @@ GLXContext glXCreateContext( Display * dpy,
       direct );
 }
 
-   
-   
+Bool glXMakeCurrent( Display * dpy, GLXDrawable drawable,
+   GLXContext ctx )
+{
+   EGLDisplay edpy = gsgxGetDisplay( dpy, True );
+   EGLSurface esurf = gsgxToESurf( drawable, ctx );
+   EGLContext ectx = gsgxToEContext( ctx );
+   return gsgxToBool( eglMakeCurrent( edpy, esurf, esurf, ectx ) );
+}
+
+const char * glXQueryExtensionsString(	Display * dpy,
+   int screen)
+{
+   return "";
+}   
+  

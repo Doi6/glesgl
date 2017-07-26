@@ -1,9 +1,11 @@
 PTH=..
+#AT=xmoto
 AT=glxgears
 ITEMS=test cube
+GLESLIB=/usr/lib/intel-cdv/libGLES.so
 
 run: $(AT)
-	LD_LIBRARY_PATH=$(PTH) $(AT)
+	GSG_GLESLIB=$(GLESLIB) LD_LIBRARY_PATH=$(PTH) $(AT)
 
 build: $(ITEMS) 
 
@@ -14,6 +16,9 @@ test: test.c
 	gcc -g -lGL -lEGL -lX11 -o $@ $^
 
 glxgears:
+glxdemo:
+glxheads:
+xmoto:
 
 clean:
 	rm -f $(ITEMS)

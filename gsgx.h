@@ -8,5 +8,4 @@
 
 #define GSGX_DEFAULT_SCREEN -1
 
-
 #endif // GSGXH
