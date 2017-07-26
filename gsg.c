@@ -115,7 +115,6 @@ extern void glTranslatef( GLfloat x, GLfloat y, GLfloat z ) {
 extern void glVertexPointer( GLint size, GLenum type, GLsizei stride,
    const GLvoid * pointer )
 {
-   gsgDebug("glVertexPointer (%x)\n", glGetError() );
    FORWARD( iespc, "glVertexPointer", 
       size, type, stride, pointer );
 }
@@ -127,15 +126,14 @@ extern void glNormalPointer( GLenum type, GLsizei stride,
 }
 
 extern void glDrawArrays( GLenum mode, GLint first, GLsizei count) {
-   gsgDebug("glDrawArrays %x %d %d (%d)\n", mode, first, count, glGetError() );   
    LIST( eis, GLDRAWARRAYS, mode, first, count );
    FORWARD( eis, "glDrawArrays", mode, first, count );
 }
 
 extern void glEnableClientState( GLenum cap ) {
-   gsgDebug("glEnableClientState (%x)\n", glGetError() );
    FORWARD( e, "glEnableClientState", cap );
 }
+
 extern void glDisableClientState( GLenum cap ) {
    FORWARD( e, "glDisableClientState", cap );
 }
@@ -192,7 +190,6 @@ extern void glFlush() {
 extern void glMaterialfv( GLenum face, GLenum pname, 
    const GLfloat * params) 
 {
-   gsgDebug("glMaterialfv %x, %x (%x)\n", face, pname, glGetError() );
    LIST( eefvc, GLMATERIALFV, face, pname, params );
    FORWARD( eefvc, "glMaterialfv", GL_FRONT_AND_BACK, pname, params );
 }

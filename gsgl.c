@@ -31,8 +31,10 @@ gsgListp gsglNewList() {
 }
 
 extern GLuint glGenLists( GLsizei range ) {
-   if (NULL == gsgLists)
+   if (NULL == gsgLists) {
       ARRINIT( gsgLists, gsgListp, 8 );
+      ARRADD( gsgLists, gsgListp, NULL );
+   }
    int ret = gsgLists->count;
    int i;
    for (i=0; i < range; ++i) {
@@ -201,9 +203,7 @@ Bool gsgleefvc( int op, GLenum e1, GLenum e2, const GLfloat * v ) {
 }
 
 Bool gsgle( int op, GLenum e ) {
-   gsgDebug("gsgle %d %x\n", op, e );
    if ( ! gsglInList() ) return False;
-   gsgDebug("gsgle b", op, e );
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
    ARRADD( l->ints, GLint, e );

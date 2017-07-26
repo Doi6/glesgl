@@ -51,7 +51,6 @@ void gsggClear() {
 
 extern void glBegin( GLenum mode ) {
    LIST( e, GLBEGIN, mode );
-   gsgDebug("glBegin %x %d %d\n", mode, gsggInGroup(), gsglInList() );
    if (NULL == gsgg)
       gsgg  = gsggCreate();
    switch (mode) {
@@ -69,7 +68,6 @@ extern void glBegin( GLenum mode ) {
          gsgErr( GL_INVALID_ENUM );
 	 return;
    }
-   gsgDebug("glBegin b %d %d\n", gsggInGroup(), gsglInList() );
    gsggClear();
    gsgg->mode = mode;
    gsggIn = True;
@@ -180,11 +178,13 @@ void gsggVertex( GLfloat x, GLfloat y, GLfloat z ) {
 }
 
 void gsggNormal( GLfloat x, GLfloat y, GLfloat z ) {
+   gsggExtendNorms();
    gsggVect v = { x, y, z };
    ARRADD( gsgg->norms, gsggVect, v );
 }
 
 void gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a ) {
+   gsggExtendCols();
    gsggCol c = { r, g, b, a };
    ARRADD( gsgg->cols, gsggCol, c );
 }
