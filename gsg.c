@@ -83,16 +83,21 @@ typedef GLenum (*gsg_e)();
 typedef const GLubyte * (*gsge_uvc)( GLenum );
 typedef void (*gsgb)( GLbitfield );
 typedef void (*gsge)( GLenum );
+typedef void (*gsgee)( GLenum, GLenum );
+typedef void (*gsgeef)( GLenum, GLenum, GLfloat );
 typedef void (*gsgeefvc)( GLenum, GLenum, const GLfloat * );
 typedef void (*gsgeeivc)( GLenum, GLenum, const GLint * );
+typedef void (*gsgei)( GLenum, GLint );
 typedef void (*gsgeis)( GLenum, GLint, GLsizei );
 typedef void (*gsgespc)( GLenum, GLsizei, const GLvoid * );
+typedef void (*gsgeu)( GLenum, GLuint );
 typedef void (*gsgfff)( GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffff)( GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffffff)( GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgfvc)( const GLfloat * );
 typedef void (*gsgiespc)( GLint, GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgiiss)(GLint, GLint, GLsizei, GLsizei );
+typedef void (*gsgsuv)(GLsizei, GLuint * );
 
 #define FORWARD( sign, name, ... )      \
    gsgOk();                             \
@@ -160,6 +165,11 @@ extern void glLightfv( GLenum light, GLenum pname,
 extern void glEnable( GLenum cap ) {
    LIST( e, GLENABLE, cap )
    FORWARD( e, "glEnable", cap );
+}
+
+extern void glDisable( GLenum cap ) {
+   LIST( e, GLDISABLE, cap );
+   FORWARD( e, "glDisable", cap );
 }
 
 extern void glMatrixMode( GLenum mode ) {
@@ -293,3 +303,58 @@ extern void glRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 ) {
 extern const GLubyte * glGetString( GLenum name ) {
    FORWARD( e_uvc, "glGetString", name );
 }
+
+extern void glBindTexture( GLenum target, GLuint texture ) {
+   LIST( eu, GLBINDTEXTURE, target, texture );
+   FORWARD( eu, "glBindTexture", target, texture );
+}
+
+extern void glBlendFunc( GLenum sfactor, GLenum dfactor ) {
+   LIST( ee, GLBLENDFUNC, sfactor, dfactor );
+   FORWARD( eu, "glBlendFunc", sfactor, dfactor );
+}
+
+extern void glGenTextures( GLsizei n, GLuint * textures ) {
+   FORWARD( suv, "glGenTextures", n, textures );
+}
+
+extern void glPixelStorei( GLenum pname, GLint param ) {
+   FORWARD( ei, "glPixelStorei", pname, param );
+}
+
+extern void glPushAttrib( GLbitfield mask ) {
+   LIST( b, GLPUSHATTRIB, mask );
+   FORWARD( b, "glPushAttrib", mask );
+}
+
+extern void glPopAttrib() {
+   LIST( _, GLPOPATTRIB );
+   FORWARD( _, "glPopAttrib" );
+}
+
+extern void glPushClientAttrib( GLbitfield mask ) {
+   FORWARD( b, "glPushClientAttrib", mask );
+}
+
+extern void glPopClientAttrib() {
+   FORWARD( _, "glPopClientAttrib" );
+}
+
+extern void glTexCoord2f( GLfloat s, GLfloat t ) {
+   GROUP( fff, Tex, s, t, 0.0f );
+   LIST( ff, GLTEXCOORD2F, s, t );
+   gsgDie( "glTexCoord2f withuot glBegin" );
+}
+
+extern void glTexCoordPointer( GLint size, GLenum type, GLsizei stride,
+   const GLvoid * pointer )
+{
+   FORWARD( iespc, "glTexCoordPointer", 
+      size, type, stride, pointer );
+}
+
+extern void glTexEnvf( GLenum target, GLenum pname, GLfloat param ) {
+   LIST( eef, GLTEXENVF, target, pname, param );
+   FORWARD( eef, "glTexEnvf", target, pname, param );
+}
+

@@ -23,6 +23,7 @@ typedef struct {
    ARR( gsggVect ) * verts;
    ARR( gsggVect ) * norms;
    ARR( gsggCol ) * cols;
+   ARR( gsggVect ) * texs;
 } gsggGroup;
 
 gsggGroup * gsgg = NULL;
@@ -34,6 +35,7 @@ gsggGroup * gsggCreate() {
    ARRINIT( ret->verts, gsggVect, INITSIZE );
    ARRINIT( ret->norms, gsggVect, INITSIZE );
    ARRINIT( ret->cols,  gsggCol,  INITSIZE );
+   ARRINIT( ret->texs, gsggVect, INITSIZE );
    return ret;
 }      
 
@@ -47,6 +49,7 @@ void gsggClear() {
    gsgg->verts->count = 0;
    gsgg->norms->count = 0;
    gsgg->cols->count  = 0;
+   gsgg->texs->count = 0;
 }
 
 extern void glBegin( GLenum mode ) {
@@ -95,12 +98,26 @@ void gsggExtendCols() {
    }
 }   
    
+// make as many tex coords as vertices
+void gsggExtendTexs() {
+   int m = gsgg->texs->count;
+   if ( 0 < m ) {
+      gsggVect v = gsgg->texs->items[m-1];
+      int n = gsgg->verts->count;
+      while ( gsgg->texs->count < n )
+	 ARRADD( gsgg->texs, gsggVect, v );
+   }
+}   
+      
+   
 void gsggDraw(GLenum mode) {
    glVertexPointer( 3, GL_FLOAT, 0, gsgg->verts->items );
    if ( 0 < gsgg->norms->count )
       glNormalPointer( GL_FLOAT, 0, gsgg->norms->items );
    if ( 0 < gsgg->cols->count )
       glColorPointer( 4, GL_FLOAT, 0, gsgg->cols->items );
+   if ( 0 < gsgg->texs->count )
+      glTexCoordPointer( 3, GL_FLOAT, 0, gsgg->texs->items );
    glDrawArrays( mode, 0, gsgg->verts->count );
 }
    
@@ -114,6 +131,10 @@ void glEnd() {
    if ( 0 < gsgg->cols->count ) {
       gsggExtendCols();
       glEnableClientState(GL_COLOR_ARRAY);
+   }
+   if ( 0 < gsgg->texs->count ) {
+      gsggExtendTexs();
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY );
    }
    switch ( gsgg->mode ) {
       case GL_QUADS: 
@@ -187,4 +208,10 @@ void gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a ) {
    gsggExtendCols();
    gsggCol c = { r, g, b, a };
    ARRADD( gsgg->cols, gsggCol, c );
+}
+
+void gsggTex( GLfloat s, GLfloat t, GLfloat p ) {
+   gsggExtendTexs();
+   gsggVect v = { s, t, p };
+   ARRADD( gsgg->texs, gsggVect, v );
 }

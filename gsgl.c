@@ -146,6 +146,15 @@ Bool gsglfvc( int op, const GLfloat * v ) {
    return True;
 }
 
+Bool gsglff( int op, GLfloat f1, GLfloat f2 ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->floats, GLfloat, f1 );
+   ARRADD( l->floats, GLfloat, f2 );
+   return True;
+}   
+
 Bool gsglfff( int op, GLfloat f1, GLfloat f2, GLfloat f3 ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
@@ -192,6 +201,15 @@ Bool gsgleis( int op, GLenum e, GLint i, GLsizei s ) {
    return True;
 }   
 
+Bool gsgleu( int op, GLenum e, GLuint u ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, e );
+   ARRADD( l->ints, GLint, u );
+   return True;
+}   
+
 Bool gsgleefvc( int op, GLenum e1, GLenum e2, const GLfloat * v ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
@@ -207,6 +225,25 @@ Bool gsgle( int op, GLenum e ) {
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
    ARRADD( l->ints, GLint, e );
+   return True;
+}   
+
+Bool gsglee( int op, GLenum e1, GLenum e2 ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, e1 );
+   ARRADD( l->ints, GLint, e2 );
+   return True;
+}   
+
+Bool gsgleef( int op, GLenum e1, GLenum e2, GLfloat f ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, e1 );
+   ARRADD( l->ints, GLint, e2 );
+   ARRADD( l->floats, GLfloat, f );
    return True;
 }   
 

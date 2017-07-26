@@ -5,11 +5,10 @@
 #include <GL/gl.h>
 
 void gsgInit();
-void gsgDie( const char * fmt, ... );
-void gsgDebug( const char * fmt, ... );
-void gsgErr( GLenum value );
+extern void gsgDie( const char * fmt, ... );
+extern void gsgDebug( const char * fmt, ... );
+extern void * gsgDl( const char * name );
+extern void gsgErr( GLenum value );
 void gsgFree( void * );
-
-extern GLenum gsgError;
 
 #endif // GSGH

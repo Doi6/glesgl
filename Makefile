@@ -1,4 +1,4 @@
-CL=gcc -lEGL -fPIC -shared -Wl,-init,gsgInit
+CL=gcc -lX11 -lEGL -fPIC -shared -Wl,-init,gsgInit
 C=gcc -Wall -c
 ITEMS = gsg gsgx gsgg gsgl
 SO=libGL.so.1

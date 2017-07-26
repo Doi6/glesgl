@@ -1,6 +1,6 @@
 PTH=..
-#AT=xmoto
-AT=glxgears
+AT=neverball
+#AT=glxgears
 ITEMS=test cube
 GLESLIB=/usr/lib/intel-cdv/libGLES.so
 
@@ -19,6 +19,7 @@ glxgears:
 glxdemo:
 glxheads:
 xmoto:
+neverball:
 
 clean:
 	rm -f $(ITEMS)

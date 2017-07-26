@@ -29,14 +29,25 @@
 #define GLCOLOR4F      20
 #define GLBEGIN        21
 #define GLEND          22
+#define GLBINDTEXTURE  23
+#define GLBLENDFUNC    24
+#define GLDISABLE      25
+#define GLPOPATTRIB    26
+#define GLPUSHATTRIB   27
+#define GLTEXCOORD2F   28
+#define GLTEXENVF      29
 
 Bool gsglInList();
 
 Bool gsgl_( int );
 Bool gsglb( int, GLbitfield );
 Bool gsgle( int, GLenum );
+Bool gsglee( int, GLenum, GLenum );
+Bool gsgleef( int, GLenum, GLenum, GLfloat );
 Bool gsgleefvc( int, GLenum, GLenum, const GLfloat * );
 Bool gsgleis( int, GLenum, GLint, GLsizei );
+Bool gsgleu( int, GLenum, GLuint );
+Bool gsglff( int, GLfloat, GLfloat );
 Bool gsglfff( int, GLfloat, GLfloat, GLfloat );
 Bool gsglffff( int, GLfloat, GLfloat, GLfloat, GLfloat );
 Bool gsglffffff( int, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat );

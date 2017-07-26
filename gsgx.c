@@ -32,12 +32,15 @@ EGLint gsgxEAttr( int attr ) {
       case GLX_ALPHA_SIZE:  return EGL_ALPHA_SIZE;
       case GLX_DEPTH_SIZE:  return EGL_DEPTH_SIZE;
       case GLX_VISUAL_ID:   return EGL_NATIVE_VISUAL_ID;
+      case GLX_STENCIL_SIZE: return EGL_STENCIL_SIZE;
+      case GLX_X_VISUAL_TYPE:
+         return GSGX_UNSUPPORTED;
       case GLX_DOUBLEBUFFER:
       case GLX_RGBA:
       case GLX_STEREO:
          return GSGX_UNSUPPORTED_SINGLE;
       default:
-         gsgDie( "Unknown attrib: %d", attr );
+         gsgDie( "Unknown attrib: 0x%x", attr );
          return 0;
    }
 }
@@ -185,30 +188,35 @@ XVisualInfo * glXGetVisualFromFBConfig( Display * dpy,
 	  int n;
       XVisualInfo * tmp = XGetVisualInfo( dpy, VisualIDMask, ret, &n );
       if ( tmp ) {
-		 COPY( XVisualInfo, tmp, ret );
-		 XFree( tmp );
-	  }
-	  gsgDebug( "valami:%x\n", ret->visualid );
+	 COPY( XVisualInfo, tmp, ret );
+	 XFree( tmp );
+      }
    } else 
       gsgDie("could not get config attrib:%x\n", code );
    return ret;
 }
 
+int glXGetConfig( Display * dpy, XVisualInfo * vis, int attrib,
+   int * value )
+{
+   switch (attrib) {
+      default: return GLX_BAD_ATTRIBUTE; 
+   }
+}
+
 int glXGetFBConfigAttrib( Display * dpy, GLXFBConfig config,
  	int attribute, int * value)
 {
-	gsgDebug("glXGetFBConfigAttrib %x\n", attribute);
-	EGLConfig econf = gsgxToEConfig( config );
-	EGLDisplay edpy = gsgxGetDisplay( dpy, True );
-	EGLint eattr = gsgxEAttr( attribute );
-	EGLint val;
-	gsgDebug("econf:%x\n", econf);
-	if ( EGL_FALSE == eglGetConfigAttrib( edpy, econf, eattr, & val ))
-	   gsgDie("Cannot get attribute: %x\n", eglGetError() );
+   gsgDebug("glXGetFBConfigAttrib %x\n", attribute);
+   EGLConfig econf = gsgxToEConfig( config );
+   EGLDisplay edpy = gsgxGetDisplay( dpy, True );
+   EGLint eattr = gsgxEAttr( attribute );
+   EGLint val;
+   if ( EGL_FALSE == eglGetConfigAttrib( edpy, econf, eattr, & val ))
+      gsgDie("Cannot get attribute: %x\n", eglGetError() );
 //	   return GLX_BAD_ATTRIBUTE;
-	*value = gsgxGVal( eattr, val );
-	gsgDebug("value: %d\n", *value );
-	return Success;
+   *value = gsgxGVal( eattr, val );
+    return Success;
 }
 
 /// list of contexts

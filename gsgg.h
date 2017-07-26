@@ -16,6 +16,7 @@
 void gsggVertex( GLfloat x, GLfloat y, GLfloat z );
 void gsggNormal( GLfloat x, GLfloat y, GLfloat z );
 void gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a );
+void gsggTex( GLfloat s, GLfloat t, GLfloat p );
 
 Bool gsggInGroup();
 
