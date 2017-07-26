@@ -83,15 +83,15 @@ int gsglArrSize( int op, GLenum e ) {
 	    case GL_AMBIENT: 
 	    case GL_DIFFUSE: 
 	    case GL_SPECULAR: 
-	    case GL_EMISSION: 
+	    case GL_EMISSION:
 	    case GL_AMBIENT_AND_DIFFUSE: 
 	       return 4;
-	    case GL_COLOR_INDEXES:
-	       return 3;
+	    case GL_COLOR_INDEXES: return 3;
+	    case GL_SHININESS: return 1;
          }
       break;
    }
-   gsgDie("Unkonwn ArrSize op:%d\n", op );
+   gsgDie("Unkonwn ArrSize op:%d e:%x\n", op, e );
    return 0;
 }
 
@@ -125,6 +125,18 @@ void gsglExecute( gsgList * l ) {
 	 break;
 	 case GLBEGIN: glBegin( *(ip++) ); break;
 	 case GLEND: glEnd(); break;
+	 case GLBINDTEXTURE: 
+	    glBindTexture( ip[0], ip[1]  );
+	    ip += 2;
+	 break;
+	 case GLTEXCOORD2F:
+	    glTexCoord2fv( fp );
+	    fp += 2;
+	 break;
+	 case GLCOLOR4F: 
+	    glColor4fv( fp );
+	    fp += 4;
+	 break;
 	 default: gsgDie("Unkown gsglExecute op: %d\n", op );
       }
    }
@@ -191,58 +203,51 @@ Bool gsglffffff( int op, GLfloat f1, GLfloat f2, GLfloat f3,
    return True;
 }   
 
-Bool gsgleis( int op, GLenum e, GLint i, GLsizei s ) {
+Bool gsglifvc( int op, GLint i, const GLfloat * v ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e );
    ARRADD( l->ints, GLint, i );
-   ARRADD( l->ints, GLint, s );
-   return True;
-}   
-
-Bool gsgleu( int op, GLenum e, GLuint u ) {
-   if ( ! gsglInList() ) return False;
-   gsgList * l = gsgLists->items[ gsglCurrent ];
-   ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e );
-   ARRADD( l->ints, GLint, u );
-   return True;
-}   
-
-Bool gsgleefvc( int op, GLenum e1, GLenum e2, const GLfloat * v ) {
-   if ( ! gsglInList() ) return False;
-   gsgList * l = gsgLists->items[ gsglCurrent ];
-   ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e1 );
-   ARRADD( l->ints, GLint, e2 );
-   gsglFloats( l, op, e2, v );
+   gsglFloats( l, op, i, v );
    return True;
 }
 
-Bool gsgle( int op, GLenum e ) {
+Bool gsgliifvc( int op, GLint i1, GLint i2, const GLfloat * v ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   gsglFloats( l, op, i2, v );
+   return True;
+}
+
+
+Bool gsgliif( int op, GLint i1, GLint i2, GLfloat f ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   ARRADD( l->floats, GLfloat, f );
    return True;
 }   
 
-Bool gsglee( int op, GLenum e1, GLenum e2 ) {
+Bool gsgliii( int op, GLint i1, GLint i2, GLint i3 ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e1 );
-   ARRADD( l->ints, GLint, e2 );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   ARRADD( l->ints, GLint, i3 );
    return True;
-}   
+}
 
-Bool gsgleef( int op, GLenum e1, GLenum e2, GLfloat f ) {
+Bool gsglif( int op, GLint i, GLfloat f ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, e1 );
-   ARRADD( l->ints, GLint, e2 );
+   ARRADD( l->ints, GLint, i );
    ARRADD( l->floats, GLfloat, f );
    return True;
 }   
@@ -254,24 +259,40 @@ Bool gsgl_( int op ) {
    return True;
 }   
 
-Bool gsglb( int op, GLbitfield b ) {
+Bool gsgli( int op, GLint i ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
-   ARRADD( l->ints, GLint, b );
+   ARRADD( l->ints, GLint, i );
    return True;
 }   
 
-Bool gsgliiss( int op, GLint i1, GLint i2, GLsizei s1, GLsizei s2 ) {
+Bool gsglii( int op, GLint i1, GLint i2 ) {
    if ( ! gsglInList() ) return False;
    gsgList * l = gsgLists->items[ gsglCurrent ];
    ARRADD( l->ints, GLint, op );
    ARRADD( l->ints, GLint, i1 );
    ARRADD( l->ints, GLint, i2 );
-   ARRADD( l->ints, GLint, s1 );
-   ARRADD( l->ints, GLint, s2 );
+   return True;
+}   
+
+
+Bool gsgliiii( int op, GLint i1, GLint i2, GLint i3, GLint i4 ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   ARRADD( l->ints, GLint, i3 );
+   ARRADD( l->ints, GLint, i4 );
    return True;
 }
 
-
+extern GLboolean glIsList( GLuint list ) {
+   if (NULL == gsgLists)
+      return False;
+   if ( list >= gsgLists->count )
+      return False;
+   return NULL != gsgLists->items[ list ];
+}
 

@@ -80,25 +80,39 @@ extern void glVertex3fv( const GLfloat * v ) {
 
 typedef void (*gsg_)();
 typedef GLenum (*gsg_e)();
-typedef const GLubyte * (*gsge_uvc)( GLenum );
-typedef void (*gsgb)( GLbitfield );
+typedef void (*gsgb)( GLboolean );
+typedef void (*gsgbbbb)(GLboolean, GLboolean, GLboolean, GLboolean );
 typedef void (*gsge)( GLenum );
+typedef const GLubyte * (*gsge_uvc)( GLenum );
 typedef void (*gsgee)( GLenum, GLenum );
+typedef void (*gsgeee)( GLenum, GLenum, GLenum );
+typedef void (*gsgef)( GLenum, GLfloat );
+typedef void (*gsgefvc)( GLenum, const GLfloat * );
 typedef void (*gsgeef)( GLenum, GLenum, GLfloat );
+typedef void (*gsgeei)( GLenum, GLenum, GLint );
 typedef void (*gsgeefvc)( GLenum, GLenum, const GLfloat * );
 typedef void (*gsgeeivc)( GLenum, GLenum, const GLint * );
 typedef void (*gsgei)( GLenum, GLint );
+typedef void (*gsgeiissieeovc)(GLenum, GLint, GLint, GLsizei, GLsizei,
+   GLint, GLenum, GLenum, const GLvoid * );
+typedef void (*gsgeiiisseeovc)(GLenum, GLint, GLint, GLint, GLsizei, 
+   GLsizei, GLenum, GLenum, const GLvoid * );
 typedef void (*gsgeis)( GLenum, GLint, GLsizei );
+typedef void (*gsgeiu)( GLenum, GLint, GLuint );
+typedef void (*gsgeiv)( GLenum, GLint * );
 typedef void (*gsgespc)( GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgeu)( GLenum, GLuint );
+typedef void (*gsgff)( GLfloat, GLfloat );
 typedef void (*gsgfff)( GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffff)( GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffffff)( GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgfvc)( const GLfloat * );
 typedef void (*gsgiespc)( GLint, GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgiiss)(GLint, GLint, GLsizei, GLsizei );
+typedef void (*gsgm)( GLbitfield );
 typedef void (*gsgsuv)(GLsizei, GLuint * );
-
+typedef GLboolean (*gsgu_b)( GLuint );
+   
 #define FORWARD( sign, name, ... )      \
    gsgOk();                             \
    static gsg##sign gsgfw = NULL;       \
@@ -131,7 +145,7 @@ extern void glNormalPointer( GLenum type, GLsizei stride,
 }
 
 extern void glDrawArrays( GLenum mode, GLint first, GLsizei count) {
-   LIST( eis, GLDRAWARRAYS, mode, first, count );
+   LIST( iii, GLDRAWARRAYS, mode, first, count );
    FORWARD( eis, "glDrawArrays", mode, first, count );
 }
 
@@ -158,22 +172,22 @@ extern GLenum glGetError() {
 extern void glLightfv( GLenum light, GLenum pname, 
    const GLfloat * params )
 {
-   LIST( eefvc, GLLIGHTFV, light, pname, params );
+   LIST( iifvc, GLLIGHTFV, light, pname, params );
    FORWARD( eefvc, "glLightfv", light, pname, params );
 }
 
 extern void glEnable( GLenum cap ) {
-   LIST( e, GLENABLE, cap )
+   LIST( i, GLENABLE, cap )
    FORWARD( e, "glEnable", cap );
 }
 
 extern void glDisable( GLenum cap ) {
-   LIST( e, GLDISABLE, cap );
+   LIST( i, GLDISABLE, cap );
    FORWARD( e, "glDisable", cap );
 }
 
 extern void glMatrixMode( GLenum mode ) {
-   LIST( e, GLMATRIXMODE, mode );
+   LIST( i, GLMATRIXMODE, mode );
    FORWARD( e, "glMatrixMode", mode );
 }
 
@@ -183,13 +197,13 @@ extern void glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
 }
 
 extern void glViewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
-   LIST( iiss, GLVIEWPORT, x, y, width, height );
+   LIST( iiii, GLVIEWPORT, x, y, width, height );
    FORWARD( iiss, "glViewport", x, y, width, height );
 }
 
 extern void glClear( GLbitfield mask ) {
-   LIST( b, GLCLEAR, mask );
-   FORWARD( b, "glClear", mask );
+   LIST( i, GLCLEAR, mask );
+   FORWARD( m, "glClear", mask );
 }
 
 extern void glFlush() {
@@ -200,7 +214,7 @@ extern void glFlush() {
 extern void glMaterialfv( GLenum face, GLenum pname, 
    const GLfloat * params) 
 {
-   LIST( eefvc, GLMATERIALFV, face, pname, params );
+   LIST( iifvc, GLMATERIALFV, face, pname, params );
    FORWARD( eefvc, "glMaterialfv", GL_FRONT_AND_BACK, pname, params );
 }
 
@@ -217,7 +231,7 @@ extern void glVertex3f( GLfloat x, GLfloat y, GLfloat z ) {
 }
 
 extern void glShadeModel( GLenum mode ) {
-   LIST( e, GLSHADEMODEL, mode );
+   LIST( i, GLSHADEMODEL, mode );
    FORWARD( e, "glShadeModel", mode );
 }
 
@@ -277,6 +291,10 @@ extern void glColor4f( GLfloat red, GLfloat green, GLfloat blue,
    FORWARD( ffff, "glColor4f", red, green, blue, alpha );
 }
 
+extern void glColor4fv( const GLfloat * v ) {
+   glColor4f( v[0], v[1], v[2], v[3] );
+}
+
 extern void glColor3f( GLfloat red, GLfloat green, GLfloat blue ) {
    glColor4f( red, green, blue, 1.0f );
 }
@@ -305,12 +323,12 @@ extern const GLubyte * glGetString( GLenum name ) {
 }
 
 extern void glBindTexture( GLenum target, GLuint texture ) {
-   LIST( eu, GLBINDTEXTURE, target, texture );
+   LIST( ii, GLBINDTEXTURE, target, texture );
    FORWARD( eu, "glBindTexture", target, texture );
 }
 
 extern void glBlendFunc( GLenum sfactor, GLenum dfactor ) {
-   LIST( ee, GLBLENDFUNC, sfactor, dfactor );
+   LIST( ii, GLBLENDFUNC, sfactor, dfactor );
    FORWARD( eu, "glBlendFunc", sfactor, dfactor );
 }
 
@@ -323,8 +341,8 @@ extern void glPixelStorei( GLenum pname, GLint param ) {
 }
 
 extern void glPushAttrib( GLbitfield mask ) {
-   LIST( b, GLPUSHATTRIB, mask );
-   FORWARD( b, "glPushAttrib", mask );
+   LIST( i, GLPUSHATTRIB, mask );
+   FORWARD( m, "glPushAttrib", mask );
 }
 
 extern void glPopAttrib() {
@@ -333,11 +351,15 @@ extern void glPopAttrib() {
 }
 
 extern void glPushClientAttrib( GLbitfield mask ) {
-   FORWARD( b, "glPushClientAttrib", mask );
+   FORWARD( m, "glPushClientAttrib", mask );
 }
 
 extern void glPopClientAttrib() {
    FORWARD( _, "glPopClientAttrib" );
+}
+
+extern void glTexCoord2fv( const GLfloat * v ) {
+   glTexCoord2f( v[0], v[1] );
 }
 
 extern void glTexCoord2f( GLfloat s, GLfloat t ) {
@@ -354,7 +376,120 @@ extern void glTexCoordPointer( GLint size, GLenum type, GLsizei stride,
 }
 
 extern void glTexEnvf( GLenum target, GLenum pname, GLfloat param ) {
-   LIST( eef, GLTEXENVF, target, pname, param );
+   LIST( iif, GLTEXENVF, target, pname, param );
    FORWARD( eef, "glTexEnvf", target, pname, param );
 }
 
+extern void glTexImage2D( GLenum target, GLint level,
+   GLint internalFormat, GLsizei width, GLsizei height, GLint border,
+   GLenum format, GLenum type, const GLvoid * data )
+{
+   if ( GL_TEXTURE_2D != target )
+      gsgDie("only gl_texture_2d supported\n" );
+   if (gsglInList())
+      gsgDie("in list teximage2d not supported\n" );
+   FORWARD( eiissieeovc, "glTexImage2D", target, level, internalFormat,
+      width, height, border, format, type, data );
+}
+ 
+extern void glTexSubImage2D( GLenum target, GLint level,
+   GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, 
+   GLenum format, GLenum type, const GLvoid * data )
+{
+   if ( GL_TEXTURE_2D != target )
+      gsgDie("only gl_texture_2d supported\n" );
+   if (gsglInList())
+      gsgDie("in list texSubImage2d not supported\n" );
+   FORWARD( eiiisseeovc, "glTexSubImage2D", target, level, xoffset,
+      yoffset, width, height, format, type, data );
+}
+ 
+extern void glTexParameteri( GLenum target, GLenum pname, GLint param ) {
+   LIST( iii, GLTEXPARAMETERI, target, pname, param );
+   FORWARD( eei, "glTexParameteri", target, pname, param ); 
+}
+
+extern void glVertex2i( GLint x, GLint y ) {
+   glVertex2f( x, y );
+}
+
+extern void glLightModeli( GLenum pname, GLint value ) {
+   if (GL_LIGHT_MODEL_TWO_SIDE == pname)
+      return glLightModelf( pname, value );
+   gsgErr( GL_INVALID_ENUM );
+}
+
+extern void glLightModelf( GLenum pname, GLfloat value ) {
+   LIST( if, GLLIGHTMODELF, pname, value );
+   FORWARD( ef, "glLightModelf", pname, value );
+}
+
+extern void glDepthFunc( GLenum func ) {
+   LIST( i, GLDEPTHFUNC, func );
+   FORWARD( e, "glDepthFunc", func );
+}
+
+extern void glReadBuffer( GLenum mode ) {
+   gsgDebug("glReadBuffer %x\n", mode );
+   gsgErr( GL_INVALID_ENUM );
+}
+
+extern void glGetIntegerv( GLenum pname, GLint * params ) {
+   FORWARD( eiv, "glGetIntegerv", pname, params );
+}
+
+extern void glTexGeni( GLenum coord, GLenum pname, GLint param ) {
+   gsgDebug("glTexGeni %x %x %i\n", coord, pname, param );
+   gsgErr( GL_INVALID_ENUM );
+}
+
+extern void glPolygonOffset( GLfloat factor, GLfloat units ) {
+   LIST( ff, GLPOLYGONOFFSET, factor, units );
+   FORWARD( ff, "glPolygonOffset", factor, units );
+}
+
+extern GLboolean glIsTexture( GLuint texture ) {
+   FORWARD( u_b, "glIsTexture", texture );
+}
+
+extern void glStencilFunc( GLenum func, GLint ref, GLuint mask ) {
+   LIST( iii, GLSTENCILFUNC, func, ref, mask );
+   FORWARD( eiu, "glStencilFunc", func, ref, mask );
+}
+
+extern void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass ) {
+   LIST( iii, GLSTENCILOP, fail, zfail, zpass );
+   FORWARD( eee, "glStencilOp", fail, zfail, zpass );
+}
+
+extern void glColorMask( GLboolean red, GLboolean green, GLboolean blue,
+   GLboolean alpha )
+{
+   LIST( iiii, GLCOLORMASK, red, green, blue, alpha );
+   FORWARD(  bbbb, "glColorMask", red, green, blue, alpha );
+}
+
+extern void glDepthMask( GLboolean flag ) {
+   LIST( i, GLDEPTHMASK, flag );
+   FORWARD( b, "glDepthMask", flag );
+}
+
+extern void glFrontFace( GLenum mode ) {
+   LIST( i, GLFRONTFACE, mode );
+   FORWARD( e, "glFrontFace", mode );
+}
+
+extern void glScalef( GLfloat x, GLfloat y, GLfloat z ) {
+   LIST( fff, GLSCALEF, x, y, z );
+   FORWARD( fff, "glScalef", x, y, z );
+}
+
+extern void glClipPlanef( GLenum plane, const GLfloat * eq ) {
+   LIST( ifvc, GLCLIPPLANE, plane, eq );
+   FORWARD( efvc, "glClipPlanef", plane, eq );
+}
+
+extern void glClipPlane( GLenum plane, const GLdouble * eq ) {
+   GLfloat v [] = { eq[0], eq[1], eq[2], eq[3] };
+   glClipPlanef( plane, v );
+}

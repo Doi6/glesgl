@@ -53,7 +53,7 @@ void gsggClear() {
 }
 
 extern void glBegin( GLenum mode ) {
-   LIST( e, GLBEGIN, mode );
+   LIST( i, GLBEGIN, mode );
    if (NULL == gsgg)
       gsgg  = gsggCreate();
    switch (mode) {
@@ -136,6 +136,7 @@ void glEnd() {
       gsggExtendTexs();
       glEnableClientState(GL_TEXTURE_COORD_ARRAY );
    }
+   GLenum bef = glGetError();
    switch ( gsgg->mode ) {
       case GL_QUADS: 
          gsggDraw( GL_TRIANGLES ); 
@@ -145,8 +146,9 @@ void glEnd() {
       break;
       default: gsggDraw( gsgg->mode );
    } 
-   if ( GL_NO_ERROR != glGetError() )
-      gsgDie("after draw:%x\n", glGetError() );
+   GLenum err = glGetError();
+   if ( GL_NO_ERROR != err )
+      gsgDie("after draw:%x %x\n", bef, err );
    glDisableClientState(GL_VERTEX_ARRAY);
    glDisableClientState(GL_COLOR_ARRAY);
    glDisableClientState(GL_NORMAL_ARRAY);

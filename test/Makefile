@@ -1,6 +1,6 @@
 PTH=..
-AT=neverball
-#AT=glxgears
+#AT=neverball
+AT=glxgears
 ITEMS=test cube
 GLESLIB=/usr/lib/intel-cdv/libGLES.so
 
