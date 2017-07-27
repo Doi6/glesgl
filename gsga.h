@@ -5,6 +5,7 @@
 
 #define ALLOC( typ ) (typ *)malloc(sizeof(typ))
 #define ALLOCN( typ, n ) (typ *)malloc((n)*sizeof(typ))
+#define FREE( x ) free( x )
 #define REALLOCN( typ, old, n ) (typ *)realloc((old), (n)*sizeof(typ))
 #define COPY( typ, src, dst ) memcpy( dst, src, sizeof(typ))
 #define COPYN( typ, src, dst, n ) memcpy( dst, src, (n)*sizeof(typ))
@@ -23,12 +24,18 @@
    } ARR( base )
 
 /// create new array
-#define ARRINIT( arr, base, isize )    \
-   { arr = ALLOC( ARR(base));          \
-     arr->count = 0;                   \
-     arr->size = isize;                \
-     arr->items = ALLOCN(base, isize); \
-   }
+#define ARRINIT( arr, base, isize ) { \
+   arr = ALLOC( ARR(base) );          \
+   arr->count = 0;                    \
+   arr->size = isize;                 \
+   arr->items = ALLOCN(base, isize);  \
+}
+
+/// free array
+#define ARRFREE( arr ) { \
+   FREE( arr->items );   \
+   FREE( arr );          \
+}
 
 /// lookup and return a value in array
 #define ARRLOOKUP( arr, keyfield, key, valuefield )  \

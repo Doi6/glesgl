@@ -47,6 +47,7 @@
 #define GLFRONTFACE     38
 #define GLSCALEF        39
 #define GLCLIPPLANE     40
+#define GLCULLFACE      41
 
 Bool gsglInList();
 

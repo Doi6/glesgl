@@ -30,6 +30,12 @@ gsgListp gsglNewList() {
    return ret;
 }
 
+void gsglFreeList( gsgListp lst ) {
+   ARRFREE( lst->ints );
+   ARRFREE( lst->floats );
+   FREE( lst );
+}
+
 extern GLuint glGenLists( GLsizei range ) {
    if (NULL == gsgLists) {
       ARRINIT( gsgLists, gsgListp, 8 );
@@ -42,6 +48,32 @@ extern GLuint glGenLists( GLsizei range ) {
       ARRADD( gsgLists, gsgListp, l); 
    }
    return ret;
+}
+
+static void gsglDeleteList( int i ) {
+   if ( 0 > i || i >= gsgLists->count )
+      return;
+   gsgListp lst = gsgLists->items[i];
+   if (NULL == lst)
+      return;
+   gsglFreeList( lst );
+   gsgLists->items[i] = NULL;
+   /// free up indexes at end
+   if (i == gsgLists->count-1) {
+      while ( 0 < i && NULL == gsgLists->items[i] ) {
+	 --gsgLists->count;
+	 --i;
+      }
+   }
+}
+
+extern void glDeleteLists( GLuint list, GLsizei range ) {
+   gsgOk();
+   if (NULL == gsgLists)
+      return;
+   int i;
+   for (i=0; i < range; ++i)
+      gsglDeleteList( list+i );
 }
 
 Bool gsglInList() {
@@ -136,6 +168,12 @@ void gsglExecute( gsgList * l ) {
 	 case GLCOLOR4F: 
 	    glColor4fv( fp );
 	    fp += 4;
+	 break;
+	 case GLENABLE: glEnable( *(ip++) ); break;
+	 case GLDISABLE: glDisable( *(ip++) ); break;
+	 case GLPOLYGONOFFSET: 
+	    glPolygonOffset( fp[0], fp[1] );
+	    fp += 2;
 	 break;
 	 default: gsgDie("Unkown gsglExecute op: %d\n", op );
       }

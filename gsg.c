@@ -19,6 +19,16 @@ void gsgDie( const char * fmt, ... ) {
    exit(1);
 }
 
+extern void gsgUnsupp( const char * fmt, ... ) {
+/*   va_list args;
+   va_start( args, fmt );
+   vfprintf( stderr, fmt, args );
+   va_end( args );
+*/
+   gsgErr( GL_INVALID_OPERATION );
+}
+
+
 void gsgDebug( const char * fmt, ... ) {
    va_list args;
    va_start( args, fmt );
@@ -111,6 +121,7 @@ typedef void (*gsgiespc)( GLint, GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgiiss)(GLint, GLint, GLsizei, GLsizei );
 typedef void (*gsgm)( GLbitfield );
 typedef void (*gsgsuv)(GLsizei, GLuint * );
+typedef void (*gsgsuvc)(GLsizei, const GLuint * );
 typedef GLboolean (*gsgu_b)( GLuint );
    
 #define FORWARD( sign, name, ... )      \
@@ -299,6 +310,10 @@ extern void glColor3f( GLfloat red, GLfloat green, GLfloat blue ) {
    glColor4f( red, green, blue, 1.0f );
 }
 
+extern void glColor3fv( const GLfloat * v ) {
+   glColor4f( v[0], v[1], v[2], 1.0f );
+}
+
 extern void glColorPointer( GLint size, GLenum type, GLsizei stride,
    const GLvoid * pointer )
 {
@@ -342,12 +357,12 @@ extern void glPixelStorei( GLenum pname, GLint param ) {
 
 extern void glPushAttrib( GLbitfield mask ) {
    LIST( i, GLPUSHATTRIB, mask );
-   FORWARD( m, "glPushAttrib", mask );
+   gsgUnsupp( "glPushAttrib %x\n", mask );
 }
 
 extern void glPopAttrib() {
    LIST( _, GLPOPATTRIB );
-   FORWARD( _, "glPopAttrib" );
+   gsgUnsupp( "glPopAttrib\n" );
 }
 
 extern void glPushClientAttrib( GLbitfield mask ) {
@@ -492,4 +507,14 @@ extern void glClipPlanef( GLenum plane, const GLfloat * eq ) {
 extern void glClipPlane( GLenum plane, const GLdouble * eq ) {
    GLfloat v [] = { eq[0], eq[1], eq[2], eq[3] };
    glClipPlanef( plane, v );
+}
+
+extern void glCullFace( GLenum mode ) {
+   LIST( i, GLCULLFACE, mode );
+   FORWARD( e, "glCullFace", mode );
+}
+
+
+extern void glDeleteTextures( GLsizei n, const GLuint * textures ) {
+   FORWARD( suvc, "glDeleteTextures", n, textures );
 }
