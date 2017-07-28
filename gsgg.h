@@ -6,18 +6,17 @@
 #define GSGG_VERTEX 1
 #define GSGG_NORMAL 2
 
-#define GROUP( sign, name, ... )  \
-   gsgOk();                       \
-   if ( gsggInGroup() ) {         \
-      gsgg##name( __VA_ARGS__ );  \
-      return;                     \
-   }
+#define GROUP( sign, name, ... )   \
+   gsgOk();                        \
+   if ( gsgg##name( __VA_ARGS__ )) \
+      return;                      
+ 
+/// in group
+GLboolean gsggVertex( GLfloat x, GLfloat y, GLfloat z );
+GLboolean gsggNormal( GLfloat x, GLfloat y, GLfloat z );
+GLboolean gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a );
+GLboolean gsggTex( GLfloat s, GLfloat t, GLfloat p );
 
-void gsggVertex( GLfloat x, GLfloat y, GLfloat z );
-void gsggNormal( GLfloat x, GLfloat y, GLfloat z );
-void gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a );
-void gsggTex( GLfloat s, GLfloat t, GLfloat p );
-
-Bool gsggInGroup();
+GLboolean gsggInGroup();
 
 #endif // GSGGH

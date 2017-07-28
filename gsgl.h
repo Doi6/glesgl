@@ -48,21 +48,33 @@
 #define GLSCALEF        39
 #define GLCLIPPLANE     40
 #define GLCULLFACE      41
+#define GLTEXPARAMETERF 42
+#define GLSCISSOR       43
+#define GLFOGF          44
+#define GLFOGFV         45
+#define GLHINT          46
+#define GLTEXENVI       47
+#define GLCOPYTEXSUBIMAGE2D 48
+#define GLLIGHTMODELFV  49
+#define GLCLEARDEPTHF   50
+#define GLMATERIALF     51
 
 Bool gsglInList();
 
 Bool gsgl_( int );
-Bool gsgli( int, GLint );
-Bool gsglif( int, GLint, GLfloat ); 
-Bool gsglifvc( int, GLint, const GLfloat * ); 
-Bool gsglii( int, GLint, GLint );
-Bool gsgliif( int, GLint, GLint, GLfloat );
-Bool gsgliii( int, GLint, GLint, GLint );
-Bool gsgliiii( int, GLint, GLint, GLint, GLint );
-Bool gsgliifvc( int, GLint, GLint, const GLfloat * );
+Bool gsglf( int, GLfloat );
 Bool gsglff( int, GLfloat, GLfloat );
 Bool gsglfff( int, GLfloat, GLfloat, GLfloat );
 Bool gsglffff( int, GLfloat, GLfloat, GLfloat, GLfloat );
 Bool gsglffffff( int, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat );
 Bool gsglfvc( int, const GLfloat * );
+Bool gsgli( int, GLint );
+Bool gsglif( int, GLint, GLfloat ); 
+Bool gsglifvc( int, GLint, const GLfloat * ); 
+Bool gsglii( int, GLint, GLint );
+Bool gsgliif( int, GLint, GLint, GLfloat );
+Bool gsgliifvc( int, GLint, GLint, const GLfloat * );
+Bool gsgliii( int, GLint, GLint, GLint );
+Bool gsgliiii( int, GLint, GLint, GLint, GLint );
+Bool gsgliiiiiiii( int, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint );
 #endif // GSGLH

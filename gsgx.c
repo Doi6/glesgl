@@ -1,15 +1,26 @@
 #include <EGL/egl.h>
 #include <string.h>
 #include <X11/Xlib.h>
+#include <dlfcn.h>
 #include "gsg.h"
 #include "gsgx.h"
 #include "gsga.h"
+
+void * gsgxSelf = NULL;
 
 Bool glXQueryExtension( Display * dpy,
    int * errorBase, int * eventBase)
 {
    return True;
 }
+
+__GLXextFuncPtr glXGetProcAddressARB( const GLubyte * fname ) {
+   if (NULL == gsgxSelf)
+      gsgxSelf = dlopen( NULL, RTLD_LAZY );
+   return dlsym( gsgxSelf, (const char *)fname );
+}      
+   
+
 
 /*
 /// count how many attribs are in array
@@ -33,6 +44,8 @@ EGLint gsgxEAttr( int attr ) {
       case GLX_DEPTH_SIZE:  return EGL_DEPTH_SIZE;
       case GLX_VISUAL_ID:   return EGL_NATIVE_VISUAL_ID;
       case GLX_STENCIL_SIZE: return EGL_STENCIL_SIZE;
+      case GLX_SAMPLE_BUFFERS: return EGL_SAMPLE_BUFFERS;
+      case GLX_SAMPLES:     return EGL_SAMPLES;
       case GLX_X_VISUAL_TYPE:
          return GSGX_UNSUPPORTED;
       case GLX_DOUBLEBUFFER:
@@ -285,6 +298,8 @@ ARR( gsgxSurf ) * gsgxSurfs;
 
 
 EGLSurface gsgxToESurf( GLXDrawable draw, GLXContext ctx ) {
+   if (0 == draw)
+      return NULL;
    if (NULL == gsgxSurfs)
       ARRINIT( gsgxSurfs, gsgxSurf, 8 );
    // try lookup

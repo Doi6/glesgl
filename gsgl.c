@@ -81,12 +81,10 @@ Bool gsglInList() {
 }
 
 extern void glNewList( GLuint list, GLenum mode ) {
-   gsgDebug("glNewList %d %x\n", list, mode );
    if (!(GL_COMPILE == mode || GL_COMPILE_AND_EXECUTE == mode )) {
       gsgErr( GL_INVALID_ENUM );
       return;
    }
-   gsgDebug("glNewList b\n" );
    if ( 0 >= list || list > gsgLists->count ) {
       gsgErr( GL_INVALID_VALUE );
       return;
@@ -95,7 +93,6 @@ extern void glNewList( GLuint list, GLenum mode ) {
       gsgErr( GL_INVALID_OPERATION );
       return;
    }
-   gsgDebug("glNewList d\n" );
    gsglCurrent = list;
    gsglMode = mode;
 }
@@ -103,7 +100,6 @@ extern void glNewList( GLuint list, GLenum mode ) {
 extern void glEndList() {
    int save = gsglCurrent;
    gsglCurrent = GSGL_NONE;
-   gsgDebug("endlist %d mode:%x\n", gsglInList(), gsglMode );
    if ( GL_COMPILE_AND_EXECUTE == gsglMode )
       glCallList( save );
 }
@@ -195,6 +191,14 @@ Bool gsglfvc( int op, const GLfloat * v ) {
    gsglFloats( l, op, 0, v );
    return True;
 }
+
+Bool gsglf( int op, GLfloat f ) {
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->floats, GLfloat, f );
+   return True;
+}   
 
 Bool gsglff( int op, GLfloat f1, GLfloat f2 ) {
    if ( ! gsglInList() ) return False;
@@ -323,6 +327,23 @@ Bool gsgliiii( int op, GLint i1, GLint i2, GLint i3, GLint i4 ) {
    ARRADD( l->ints, GLint, i2 );
    ARRADD( l->ints, GLint, i3 );
    ARRADD( l->ints, GLint, i4 );
+   return True;
+}
+
+Bool gsgliiiiiiii( int op, GLint i1, GLint i2, GLint i3, GLint i4,
+   GLint i5, GLint i6, GLint i7, GLint i8 ) 
+{
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   ARRADD( l->ints, GLint, i3 );
+   ARRADD( l->ints, GLint, i4 );
+   ARRADD( l->ints, GLint, i5 );
+   ARRADD( l->ints, GLint, i6 );
+   ARRADD( l->ints, GLint, i7 );
+   ARRADD( l->ints, GLint, i8 );
    return True;
 }
 

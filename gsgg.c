@@ -26,8 +26,12 @@ typedef struct {
    ARR( gsggVect ) * texs;
 } gsggGroup;
 
-gsggGroup * gsgg = NULL;
-static Bool gsggIn = False;
+static gsggGroup * gsgg = NULL;
+static GLboolean gsggIn = False;
+
+static gsggVect gsggnorm = {0.0f,0.0f,0.0f};
+static gsggVect gsggtex = {0.0f,0.0f,0.0f};
+static gsggCol gsggcol = {0.0f,0.0f,0.0f,0.0f};
 
 gsggGroup * gsggCreate() {
    gsggGroup * ret = ALLOC( gsggGroup );
@@ -39,8 +43,30 @@ gsggGroup * gsggCreate() {
    return ret;
 }      
 
-Bool gsggInGroup() {
+inline GLboolean gsggInGroup() {
    return gsggIn;
+}
+
+/// extend norms, cols, texs by idx
+void gsggExtend( int idx ) {
+   if ( 0 > idx )
+      return;
+   int nv = gsgg->verts->count;
+   int nn = gsgg->norms->count;
+   if ( idx < nn && nn < nv  ) {
+      gsggVect v = gsgg->norms->items[idx];
+      ARRADD( gsgg->norms, gsggVect, v );
+   }
+   int nc = gsgg->cols->count;
+   if ( idx < nc && nc < nv ) {
+      gsggCol c = gsgg->cols->items[idx];
+      ARRADD( gsgg->cols, gsggCol, c );
+   }
+   int nt = gsgg->texs->count;
+   if ( idx < nt && nt < nv ) {
+      gsggVect v = gsgg->texs->items[idx];
+      ARRADD( gsgg->texs, gsggVect, v );
+   }
 }
 
 void gsggClear() {
@@ -75,40 +101,6 @@ extern void glBegin( GLenum mode ) {
    gsgg->mode = mode;
    gsggIn = True;
 }
-
-/// make as many normals as vertices
-void gsggExtendNorms() {
-   int m = gsgg->norms->count;
-   if ( 0 < m ) {
-      gsggVect v = gsgg->norms->items[m-1];
-      int n = gsgg->verts->count;
-      while ( gsgg->norms->count < n )
-	 ARRADD( gsgg->norms, gsggVect, v );
-   }
-}   
-
-/// make as many colors as vertices
-void gsggExtendCols() {
-   int m = gsgg->cols->count;
-   if ( 0 < m ) {
-      gsggCol c = gsgg->cols->items[m-1];
-      int n = gsgg->verts->count;
-      while ( gsgg->cols->count < n )
-	 ARRADD( gsgg->cols, gsggCol, c );
-   }
-}   
-   
-// make as many tex coords as vertices
-void gsggExtendTexs() {
-   int m = gsgg->texs->count;
-   if ( 0 < m ) {
-      gsggVect v = gsgg->texs->items[m-1];
-      int n = gsgg->verts->count;
-      while ( gsgg->texs->count < n )
-	 ARRADD( gsgg->texs, gsggVect, v );
-   }
-}   
-      
    
 void gsggDraw(GLenum mode) {
    glVertexPointer( 3, GL_FLOAT, 0, gsgg->verts->items );
@@ -124,18 +116,12 @@ void gsggDraw(GLenum mode) {
 void glEnd() {
    LIST( _, GLEND );
    glEnableClientState(GL_VERTEX_ARRAY);
-   if ( 0 < gsgg->norms->count ) {
-      gsggExtendNorms();
+   if ( 0 < gsgg->norms->count )
       glEnableClientState(GL_NORMAL_ARRAY);
-   }
-   if ( 0 < gsgg->cols->count ) {
-      gsggExtendCols();
+   if ( 0 < gsgg->cols->count )
       glEnableClientState(GL_COLOR_ARRAY);
-   }
-   if ( 0 < gsgg->texs->count ) {
-      gsggExtendTexs();
+   if ( 0 < gsgg->texs->count )
       glEnableClientState(GL_TEXTURE_COORD_ARRAY );
-   }
    GLenum bef = glGetError();
    switch ( gsgg->mode ) {
       case GL_QUADS: 
@@ -163,57 +149,67 @@ void gsggOnVertexQuad() {
    if ( 4 == n % 6 ) {
       gsggVect v = arr->items[n-4];
       ARRADD( arr, gsggVect, v );
+      gsggExtend( n-4 );
       v = arr->items[n-2];
       ARRADD( arr, gsggVect, v );
+      gsggExtend( n-2 );
       n += 2;
    }
 }      
 
-/*
-/// add quad strip vertices as triangles for drawing
-void gsggOnVertexQuadStrip() {
-   ARR( gsggVect ) * arr = gsgg->verts;
-   int n = arr->count;
-   if ( 3 >= n )
-      return;
-   gsggVect v;
-   if ( 0 == n % 2 ) {
-      v = arr->items[n-1];
-      ARRADD( arr, gsggVect, v );
-      v = arr->items[n-2];
-      ARRADD( arr, gsggVect, v );
-   } else {
-      v = arr->items[n-2];
-      ARRADD( arr, gsggVect, v );
-      v = arr->items[n-1];
-      ARRADD( arr, gsggVect, v );
+GLboolean gsggVertex( GLfloat x, GLfloat y, GLfloat z ) {
+   if ( gsggIn ) {
+      gsggVect v = { x, y, z };
+      int idx = gsgg->verts->count-1;
+      ARRADD( gsgg->verts, gsggVect, v );
+      gsggExtend( idx );
+      switch ( gsgg->mode ) {
+         case GL_QUADS: gsggOnVertexQuad(); break;
+      }
    }
-}
-*/
-
-void gsggVertex( GLfloat x, GLfloat y, GLfloat z ) {
-   gsggVect v = { x, y, z };
-   ARRADD( gsgg->verts, gsggVect, v );
-   switch ( gsgg->mode ) {
-      case GL_QUADS: gsggOnVertexQuad(); break;
-//      case GL_QUAD_STRIP: gsggOnVertexQuadStrip(); break;
-   }
+   return gsggIn;
 }
 
-void gsggNormal( GLfloat x, GLfloat y, GLfloat z ) {
-   gsggExtendNorms();
-   gsggVect v = { x, y, z };
-   ARRADD( gsgg->norms, gsggVect, v );
+GLboolean gsggNormal( GLfloat x, GLfloat y, GLfloat z ) {
+   gsggVect v = {x, y, z};
+   if ( gsggIn ) {
+      int nv = gsgg->verts->count;
+      if ( gsgg->norms->count > nv )
+         -- gsgg->norms->count;
+      else while (gsgg->norms->count < nv)
+         ARRADD( gsgg->norms, gsggVect, gsggnorm );
+      ARRADD( gsgg->norms, gsggVect, v );
+   } else
+      gsggnorm = v;
+   return gsggIn;
 }
 
-void gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a ) {
-   gsggExtendCols();
-   gsggCol c = { r, g, b, a };
-   ARRADD( gsgg->cols, gsggCol, c );
+GLboolean gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a ) {
+   gsggCol c = { r,g,b,a };
+   if ( gsggIn ) {
+      int nv = gsgg->verts->count;
+      if ( gsgg->cols->count > nv )
+         -- gsgg->cols->count;
+      else while (gsgg->cols->count < nv)
+         ARRADD( gsgg->cols, gsggCol, gsggcol );
+      ARRADD( gsgg->cols, gsggCol, c );
+   } else 
+      gsggcol = c;
+   return gsggIn;
 }
-
-void gsggTex( GLfloat s, GLfloat t, GLfloat p ) {
-   gsggExtendTexs();
+ 
+GLboolean gsggTex( GLfloat s, GLfloat t, GLfloat p ) {
    gsggVect v = { s, t, p };
-   ARRADD( gsgg->texs, gsggVect, v );
+   if ( gsggIn ) {
+      int nv = gsgg->verts->count;
+      if ( gsgg->texs->count > nv )
+         -- gsgg->texs->count;
+      else while (gsgg->texs->count < nv)
+         ARRADD( gsgg->texs, gsggVect, gsggtex );
+      ARRADD( gsgg->texs, gsggVect, v );
+   } else
+      gsggtex = v;
+   return gsggIn;
 }
+
+
