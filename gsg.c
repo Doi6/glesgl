@@ -15,8 +15,11 @@ char * gsgGLlib  = "libGLES.so";
 void * gsgGLlibp = NULL;
 GLenum gsgError = GL_NO_ERROR;
 
+gsggVect gsgRasterPos = {0.0f, 0.0f, 0.0f };
+
 ARRDEF( int );
 ARR( int ) * gsgAttrs;
+ARR( int ) * gsgClientAttrs;
 
 void gsgDie( const char * fmt, ... ) {
    va_list args;
@@ -104,6 +107,20 @@ void gsgPushAttrib( GLenum mask ) {
       gsgAttrEnab( GL_LIGHTING );
       glShadeModel( gsgGeti( GL_SHADE_MODEL ) );
    }
+   if ( GL_LIGHTING_BIT != mask )
+      gsgUnsupp( "gsgPushAttrib %x\n", mask );
+   glEndList();
+}
+   
+void gsgPushClientAttrib( GLenum mask ) {
+   if (0 == mask)
+      return;
+   if ( NULL == gsgClientAttrs )
+      ARRINIT( gsgClientAttrs, int, 8 );
+   int a = glGenLists(1);
+   ARRADD( gsgClientAttrs, int, a );
+   glNewList(a,GL_COMPILE);
+   gsgUnsupp( "gsgPushClientAttrib %x\n", mask );
    glEndList();
 }
    
@@ -276,8 +293,8 @@ extern void glFlush() {
 
 
 extern void glMaterialf( GLenum face, GLenum pname, GLfloat param) {
-   LIST( iif, GLMATERIALF, face, pname, params );
-   FORWARD( eef, "glMaterialf", GL_FRONT_AND_BACK, pname, params );
+   LIST( iif, GLMATERIALF, face, pname, param );
+   FORWARD( eef, "glMaterialf", GL_FRONT_AND_BACK, pname, param );
 }
 
 extern void glMaterialfv( GLenum face, GLenum pname, 
@@ -436,7 +453,6 @@ extern void glPixelStorei( GLenum pname, GLint param ) {
 }
 
 extern void glPushAttrib( GLbitfield mask ) {
-   gsgDebug( "gsgPushAttrib %x\n", mask );
    LIST( i, GLPUSHATTRIB, mask );
    gsgPushAttrib( mask );
 }
@@ -447,7 +463,8 @@ extern void glPopAttrib() {
 }
 
 extern void glPushClientAttrib( GLbitfield mask ) {
-   FORWARD( m, "glPushClientAttrib", mask );
+   LIST( i, GLPUSHCLIENTATTRIB, mask );
+   gsgPushClientAttrib( mask );
 }
 
 extern void glPopClientAttrib() {
@@ -545,7 +562,7 @@ extern void glGetIntegerv( GLenum pname, GLint * params ) {
 }
 
 extern void glTexGeni( GLenum coord, GLenum pname, GLint param ) {
-   gsgDebug("glTexGeni %x %x %i\n", coord, pname, param );
+//   gsgDebug("glTexGeni %x %x %i\n", coord, pname, param );
    gsgErr( GL_INVALID_ENUM );
 }
 
@@ -670,5 +687,23 @@ extern void glVertex2fv( const GLfloat * v ) {
 
 extern void glPolygonStipple( const GLubyte * mask ) {
    gsgUnsupp( "glPolygonstipple\n" );
+}
+
+extern void glDrawBuffer( GLenum buf ) {
+   gsgUnsupp( "glDrawBuffer %x\n", buf );
+}
+
+extern void glLineWidth( GLfloat width ) {
+   LIST( f, GLLINEWIDTH, width );
+   FORWARD( f, "glLineWidth", width ); 
+}
+
+extern void glRasterPos2f( GLfloat x, GLfloat y ) {
+   glRasterPos3f( x, y, 0.0f );
+}
+
+extern void glRasterPos3f( GLfloat x, GLfloat y, GLfloat z ) {
+   gsggVect v = { x, y, z };
+   gsgRasterPos = v;
 }
 

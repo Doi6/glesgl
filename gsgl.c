@@ -85,7 +85,7 @@ extern void glNewList( GLuint list, GLenum mode ) {
       gsgErr( GL_INVALID_ENUM );
       return;
    }
-   if ( 0 >= list || list > gsgLists->count ) {
+   if ( ! glIsList( list ) ) {
       gsgErr( GL_INVALID_VALUE );
       return;
    }

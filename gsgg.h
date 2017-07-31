@@ -11,6 +11,10 @@
    if ( gsgg##name( __VA_ARGS__ )) \
       return;                      
  
+typedef struct {
+   GLfloat x,y,z;
+} gsggVect;
+ 
 /// in group
 GLboolean gsggVertex( GLfloat x, GLfloat y, GLfloat z );
 GLboolean gsggNormal( GLfloat x, GLfloat y, GLfloat z );

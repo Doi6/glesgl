@@ -6,10 +6,6 @@
 
 #define INITSIZE 256
 
-typedef struct {
-   GLfloat x,y,z;
-} gsggVect;
-
 ARRDEF( gsggVect );
 
 typedef struct {

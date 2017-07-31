@@ -58,6 +58,8 @@
 #define GLLIGHTMODELFV  49
 #define GLCLEARDEPTHF   50
 #define GLMATERIALF     51
+#define GLLINEWIDTH     52
+#define GLPUSHCLIENTATTRIB 53
 
 Bool gsglInList();
 
