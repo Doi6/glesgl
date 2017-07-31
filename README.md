@@ -23,4 +23,12 @@ Library might (or might not) work with other hardware (having openGL ES support)
 
 Anyway contribution and constructive comments are welcome.
 
+COMPILING
+
+Makefile should create libGL.so.1 without any configuration by typing:
+
+make
+
+You probably need libx11-dev and libegl1-mesa-dev for building.
+
 
