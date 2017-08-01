@@ -117,7 +117,7 @@ void glEnd() {
    if ( 0 < gsgg->cols->count )
       glEnableClientState(GL_COLOR_ARRAY);
    if ( 0 < gsgg->texs->count )
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY );
+      glEnableClientState( GL_TEXTURE_COORD_ARRAY );
    GLenum bef = glGetError();
    switch ( gsgg->mode ) {
       case GL_QUADS: 
@@ -130,7 +130,7 @@ void glEnd() {
    } 
    GLenum err = glGetError();
    if ( GL_NO_ERROR != err )
-      gsgDie("after draw:%x %x\n", bef, err );
+      gsgDie("after draw:%x %x %x\n", gsgg->mode, bef, err );
    glDisableClientState(GL_VERTEX_ARRAY);
    glDisableClientState(GL_COLOR_ARRAY);
    glDisableClientState(GL_NORMAL_ARRAY);

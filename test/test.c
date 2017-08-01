@@ -199,7 +199,5 @@ int main() {
    }
    */
 
-   XVisualInfo * 
-
    return 0;
 }

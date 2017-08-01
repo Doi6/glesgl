@@ -557,7 +557,31 @@ extern void glReadBuffer( GLenum mode ) {
    gsgErr( GL_INVALID_ENUM );
 }
 
+Bool gsgGetIntegerv( GLenum pname, GLint * params ) {
+   switch (pname) {
+      case GL_PACK_ROW_LENGTH:
+      case GL_PACK_SKIP_ROWS:
+      case GL_PACK_SKIP_PIXELS:
+      case GL_UNPACK_ROW_LENGTH: 
+      case GL_UNPACK_SKIP_ROWS:
+      case GL_UNPACK_SKIP_PIXELS:
+         (*params) = 0; 
+      break;
+      case GL_PACK_LSB_FIRST:
+      case GL_PACK_SWAP_BYTES:
+      case GL_UNPACK_LSB_FIRST:
+      case GL_UNPACK_SWAP_BYTES:
+         (*params) = GL_FALSE;
+      break;
+      default:
+         return False;
+   }
+   return True;
+}
+
 extern void glGetIntegerv( GLenum pname, GLint * params ) {
+   if ( gsgGetIntegerv( pname, params ) )
+      return;
    FORWARD( eiv, "glGetIntegerv", pname, params );
 }
 

@@ -1,6 +1,6 @@
 PTH=..
 AT=glxgears
-ITEMS=test cube
+ITEMS=test cube glut_example
 GLESLIB=/usr/lib/intel-cdv/libGLES.so
 
 run: 
@@ -13,6 +13,9 @@ cube: cube.c
 
 test: test.c
 	gcc -g -lGL -lEGL -lX11 -o $@ $^
+
+glut_example: glut_example.c texture.c
+	gcc -g -lGL -lglut -lGLU -o $@ $^
 
 clean:
 	rm -f $(ITEMS)

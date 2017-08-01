@@ -18,22 +18,10 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=12
-FILE_NAME_0=920;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.c;0;3
-FILE_NAME_1=174;C;0;16;2;1;0;/home/doi/dev/glesgl/gsga.h;0;3
-FILE_NAME_2=7680;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.c;0;3
-FILE_NAME_3=1258;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgx.c;0;3
-FILE_NAME_4=509;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.h;0;3
-FILE_NAME_5=2552;C;0;16;2;1;0;/usr/include/EGL/egl.h;0;3
-FILE_NAME_6=1493;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgl.h;0;3
-FILE_NAME_7=1581;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgl.c;0;3
-FILE_NAME_8=321;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.h;0;3
-FILE_NAME_9=276;Make;0;16;1;1;0;/home/doi/dev/glesgl/test/Makefile;0;3
-FILE_NAME_10=12;Make;0;16;1;1;0;/home/doi/dev/glesgl/Makefile;0;3
-FILE_NAME_11=40433;C;0;16;2;1;0;/usr/include/GL/gl.h;0;3
-FILE_NAME_12=4726;C;0;16;2;1;0;/usr/include/GL/glx.h;0;3
-FILE_NAME_13=499;C;0;16;2;1;0;/home/doi/dev/glesgl/test/cube.c;0;3
-FILE_NAME_14=6407;C;0;16;2;1;0;/usr/include/GL/glu.h;0;3
+current_page=2
+FILE_NAME_0=0;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.c;0;3
+FILE_NAME_1=5827;C;0;16;2;1;0;/usr/include/GL/gl.h;0;3
+FILE_NAME_2=2189;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.c;0;3
 
 [build-menu]
 NF_00_LB=_Make
