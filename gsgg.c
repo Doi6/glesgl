@@ -13,6 +13,7 @@ typedef struct {
 } gsggCol;
 
 ARRDEF( gsggCol );
+ARRDEF( GLushort );
 
 typedef struct {
    GLenum mode;
@@ -20,6 +21,7 @@ typedef struct {
    ARR( gsggVect ) * norms;
    ARR( gsggCol ) * cols;
    ARR( gsggVect ) * texs;
+   ARR( GLushort ) * inds;
 } gsggGroup;
 
 static gsggGroup * gsgg = NULL;
@@ -28,6 +30,7 @@ static GLboolean gsggIn = False;
 static gsggVect gsggnorm = {0.0f,0.0f,0.0f};
 static gsggVect gsggtex = {0.0f,0.0f,0.0f};
 static gsggCol gsggcol = {0.0f,0.0f,0.0f,0.0f};
+static GLfloat gsggidx = 0.0f;
 
 gsggGroup * gsggCreate() {
    gsggGroup * ret = ALLOC( gsggGroup );
@@ -36,6 +39,7 @@ gsggGroup * gsggCreate() {
    ARRINIT( ret->norms, gsggVect, INITSIZE );
    ARRINIT( ret->cols,  gsggCol,  INITSIZE );
    ARRINIT( ret->texs, gsggVect, INITSIZE );
+   ARRINIT( ret->inds, GLushort, INITSIZE );
    return ret;
 }      
 
@@ -72,6 +76,7 @@ void gsggClear() {
    gsgg->norms->count = 0;
    gsgg->cols->count  = 0;
    gsgg->texs->count = 0;
+   gsgg->inds->count = 0;
 }
 
 extern void glBegin( GLenum mode ) {
@@ -97,8 +102,48 @@ extern void glBegin( GLenum mode ) {
    gsgg->mode = mode;
    gsggIn = True;
 }
+
+/// create index array for drawing
+void gsggInds() {
+   ARR( GLushort ) * inds = gsgg->inds;
+   ARR( gsggVect ) * verts = gsgg->verts;
+   inds->count = 0;
+   int i, n;
+   switch ( gsgg->mode ) {
+      case GL_QUADS:
+         n = verts->count / 4;
+         for (i=0; i < n; ++i) {
+	    ARRADD( inds, GLushort, 4*i );
+	    ARRADD( inds, GLushort, 4*i+1 );
+	    ARRADD( inds, GLushort, 4*i+2 );
+	    ARRADD( inds, GLushort, 4*i+3 );
+	    ARRADD( inds, GLushort, 4*i );
+	    ARRADD( inds, GLushort, 4*i+2 );
+	 }
+      break;
+      case GL_QUAD_STRIP:
+	 n = (verts->count-2) / 2;
+	 for (i=0; i < n; ++i) {
+	    ARRADD( inds, GLushort, 2+2*i );
+	    ARRADD( inds, GLushort, 2+2*i-2 );
+	    ARRADD( inds, GLushort, 2+2*i-1 );
+	    ARRADD( inds, GLushort, 2+2*i+1 );
+	    ARRADD( inds, GLushort, 2+2*i   );
+	    ARRADD( inds, GLushort, 2+2*i-1 );
+	 }
+      break;
+      case GL_POLYGON:
+         n = verts->count-2;
+	 for (i=0; i<n; ++i) {
+	    ARRADD( inds, GLushort, 0 );
+	    ARRADD( inds, GLushort, i+1 );
+	    ARRADD( inds, GLushort, i+2 );
+	 }
+      break;
+   }
+}
    
-void gsggDraw(GLenum mode) {
+void gsggDraw() {
    glVertexPointer( 3, GL_FLOAT, 0, gsgg->verts->items );
    if ( 0 < gsgg->norms->count )
       glNormalPointer( GL_FLOAT, 0, gsgg->norms->items );
@@ -106,7 +151,22 @@ void gsggDraw(GLenum mode) {
       glColorPointer( 4, GL_FLOAT, 0, gsgg->cols->items );
    if ( 0 < gsgg->texs->count )
       glTexCoordPointer( 3, GL_FLOAT, 0, gsgg->texs->items );
-   glDrawArrays( mode, 0, gsgg->verts->count );
+   Bool ind = True;
+   GLenum mode = gsgg->mode;
+   switch (mode) {
+      case GL_QUADS: 
+      case GL_QUAD_STRIP: 
+      case GL_POLYGON: 
+         gsggInds(); 
+      break;
+      default: ind = False;
+   }
+   if (ind) {
+      glDrawElements(GL_TRIANGLES, gsgg->inds->count, 
+         GL_UNSIGNED_SHORT,gsgg->inds->items );
+   } else {
+      glDrawArrays( mode, 0, gsgg->verts->count );
+   }
 }
    
 void glEnd() {
@@ -119,15 +179,7 @@ void glEnd() {
    if ( 0 < gsgg->texs->count )
       glEnableClientState( GL_TEXTURE_COORD_ARRAY );
    GLenum bef = glGetError();
-   switch ( gsgg->mode ) {
-      case GL_QUADS: 
-         gsggDraw( GL_TRIANGLES ); 
-      break;
-      case GL_QUAD_STRIP: 
-         gsggDraw( GL_TRIANGLE_STRIP );
-      break;
-      default: gsggDraw( gsgg->mode );
-   } 
+   gsggDraw();
    GLenum err = glGetError();
    if ( GL_NO_ERROR != err )
       gsgDie("after draw:%x %x %x\n", gsgg->mode, bef, err );
@@ -159,9 +211,10 @@ GLboolean gsggVertex( GLfloat x, GLfloat y, GLfloat z ) {
       int idx = gsgg->verts->count-1;
       ARRADD( gsgg->verts, gsggVect, v );
       gsggExtend( idx );
-      switch ( gsgg->mode ) {
+/*      switch ( gsgg->mode ) {
          case GL_QUADS: gsggOnVertexQuad(); break;
       }
+      */
    }
    return gsggIn;
 }
@@ -207,5 +260,21 @@ GLboolean gsggTex( GLfloat s, GLfloat t, GLfloat p ) {
       gsggtex = v;
    return gsggIn;
 }
+
+GLboolean gsggIndex( GLfloat f ) {
+   GLfloat r=0.0f, g=0.0f, b=0.0f, a=1.0f;
+   if ( 1.0f == f ) {
+      r = 1.0f; g = 1.0f; b=1.0f; a=1.0f;
+   } else if (2.0f == f ) {
+      r = 1.0f; g = 0.0f; b=0.0f; a=1.0f;
+   } else if (3.0f == f ) {
+      r = 0.0f; g = 1.0f; b=0.0f; a=1.0f;
+   } else {
+      gsgUnsupp("Index %g\n", f );
+   }
+   gsggidx = f;
+   return gsggColor( r, g, b, a );
+}
+      
 
 

@@ -10,8 +10,9 @@
 // name of the library to load
 #define GSG_GLESLIB "GSG_GLESLIB"
 
-char * gsgGLlib  = "libGLES.so";
-// char * gsgGLlib  = "/usr/lib/intel-cdv/libGLES.so";
+#define GSG_SHOWUNSUPP 1
+
+char * gsgGLlib  = "libGLESv1_CM.so";
 void * gsgGLlibp = NULL;
 GLenum gsgError = GL_NO_ERROR;
 
@@ -30,11 +31,12 @@ void gsgDie( const char * fmt, ... ) {
 }
 
 extern void gsgUnsupp( const char * fmt, ... ) {
-/*   va_list args;
-   va_start( args, fmt );
-   vfprintf( stderr, fmt, args );
-   va_end( args );
-*/
+   if ( GSG_SHOWUNSUPP ) {
+      va_list args;
+      va_start( args, fmt );
+      vfprintf( stderr, fmt, args );
+      va_end( args );
+   }
    gsgErr( GL_INVALID_OPERATION );
 }
 
@@ -107,7 +109,26 @@ void gsgPushAttrib( GLenum mask ) {
       gsgAttrEnab( GL_LIGHTING );
       glShadeModel( gsgGeti( GL_SHADE_MODEL ) );
    }
-   if ( GL_LIGHTING_BIT != mask )
+   if ( GL_ENABLE_BIT & mask ) {
+      gsgAttrEnab( GL_ALPHA_TEST );
+      gsgAttrEnab( GL_AUTO_NORMAL );
+      gsgAttrEnab( GL_BLEND );
+      gsgAttrEnab( GL_COLOR_MATERIAL );
+      gsgAttrEnab( GL_CULL_FACE );
+      gsgAttrEnab( GL_DEPTH_TEST );
+      gsgAttrEnab( GL_DITHER );
+      gsgAttrEnab( GL_FOG );
+      gsgAttrEnab( GL_LIGHTING );
+      gsgAttrEnab( GL_LINE_SMOOTH );
+      gsgAttrEnab( GL_LINE_STIPPLE );
+      gsgAttrEnab( GL_COLOR_LOGIC_OP );
+      gsgAttrEnab( GL_INDEX_LOGIC_OP );
+      gsgAttrEnab( GL_MULTISAMPLE );
+      gsgAttrEnab( GL_NORMALIZE );
+      gsgAttrEnab( GL_SCISSOR_TEST );
+      gsgAttrEnab( GL_STENCIL_TEST );
+   }
+   if ( ! ((GL_LIGHTING_BIT | GL_ENABLE_BIT) & mask) )
       gsgUnsupp( "gsgPushAttrib %x\n", mask );
    glEndList();
 }
@@ -128,10 +149,20 @@ void gsgPopAttrib() {
    if ( NULL == gsgAttrs ) return;
    int n = gsgAttrs->count;
    if (0 == n) return;
-   int idx = gsgAttrs->items[n-1];
+   int idx = gsgAttrs->items[ n-1 ];
    glCallList( idx );
    glDeleteLists( idx, 1 );
    -- gsgAttrs->count;
+}
+   
+void gsgPopClientAttrib() {
+   if (NULL == gsgClientAttrs ) return;
+   int n = gsgClientAttrs->count;
+   if ( 0 == n ) return;
+   int idx = gsgClientAttrs->items[ n-1 ];
+   glCallList( idx );
+   glDeleteLists( idx, 1 );
+   -- gsgClientAttrs->count;
 }
    
 extern void glMultMatrixd( const GLdouble * md ) {
@@ -146,7 +177,15 @@ extern void glNormal3fv( const GLfloat * v ) {
    glNormal3f( v[0], v[1], v[2] );
 }
 
+extern void glNormal3dv( const GLdouble * v ) {
+   glNormal3f( v[0], v[1], v[2] );
+}
+
 extern void glVertex3fv( const GLfloat * v ) {
+   glVertex3f( v[0], v[1], v[2] );
+}
+
+extern void glVertex3dv( const GLdouble * v ) {
    glVertex3f( v[0], v[1], v[2] );
 }
 
@@ -175,6 +214,7 @@ typedef void (*gsgeiiisseeovc)(GLenum, GLint, GLint, GLint, GLsizei,
 typedef void (*gsgeis)( GLenum, GLint, GLsizei );
 typedef void (*gsgeiu)( GLenum, GLint, GLuint );
 typedef void (*gsgeiv)( GLenum, GLint * );
+typedef void (*gsgesepc)( GLenum, GLsizei, GLenum, const GLvoid * );
 typedef void (*gsgespc)( GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgeu)( GLenum, GLuint );
 typedef void (*gsgf)( GLfloat );
@@ -183,6 +223,7 @@ typedef void (*gsgfff)( GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffff)( GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgffffff)( GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat );
 typedef void (*gsgfvc)( const GLfloat * );
+typedef void (*gsgi)( GLint );
 typedef void (*gsgiespc)( GLint, GLenum, GLsizei, const GLvoid * );
 typedef void (*gsgiiss)(GLint, GLint, GLsizei, GLsizei );
 typedef void (*gsgm)( GLbitfield );
@@ -251,6 +292,10 @@ extern void glLightfv( GLenum light, GLenum pname,
 {
    LIST( iifvc, GLLIGHTFV, light, pname, params );
    FORWARD( eefvc, "glLightfv", light, pname, params );
+}
+
+extern void glLightf( GLenum light, GLenum pname, GLfloat param ) {
+   glLightfv( light, pname, &param );
 }
 
 extern void glEnable( GLenum cap ) {
@@ -397,6 +442,14 @@ extern void glColor4fv( const GLfloat * v ) {
    glColor4f( v[0], v[1], v[2], v[3] );
 }
 
+extern void glColor4dv( const GLdouble * v ) {
+   glColor4f( v[0], v[1], v[2], v[3] );
+}
+
+extern void glColor3dv( const GLdouble * v ) {
+   glColor4f( v[0], v[1], v[2], 1.0f );
+}
+
 extern void glColor3f( GLfloat red, GLfloat green, GLfloat blue ) {
    glColor4f( red, green, blue, 1.0f );
 }
@@ -430,8 +483,17 @@ extern void glRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 ) {
    glEnd();
 }
 
-extern const GLubyte * glGetString( GLenum name ) {
+const GLubyte * gsgGetString( GLenum name ) {
    FORWARD( e_uvc, "glGetString", name );
+}
+
+extern const GLubyte * glGetString( GLenum name ) {
+   const GLubyte * ret  = gsgGetString( name );
+   if (NULL == ret) {
+      gsgErr( GL_INVALID_ENUM );
+      return (const GLubyte *)"";
+   }
+   return ret;
 }
 
 extern void glBindTexture( GLenum target, GLuint texture ) {
@@ -468,7 +530,8 @@ extern void glPushClientAttrib( GLbitfield mask ) {
 }
 
 extern void glPopClientAttrib() {
-   FORWARD( _, "glPopClientAttrib" );
+   LIST( _, GLPOPCLIENTATTRIB );
+   gsgPopClientAttrib();
 }
 
 extern void glTexCoord2fv( const GLfloat * v ) {
@@ -479,6 +542,10 @@ extern void glTexCoord2f( GLfloat s, GLfloat t ) {
    GROUP( fff, Tex, s, t, 0.0f );
    LIST( ff, GLTEXCOORD2F, s, t );
    gsgDie( "glTexCoord2f withuot glBegin" );
+}
+
+extern void glTexCoord2d( GLdouble s, GLdouble t ) {
+   glTexCoord2f( s, t );
 }
 
 extern void glTexCoordPointer( GLint size, GLenum type, GLsizei stride,
@@ -587,6 +654,12 @@ extern void glGetIntegerv( GLenum pname, GLint * params ) {
 
 extern void glTexGeni( GLenum coord, GLenum pname, GLint param ) {
 //   gsgDebug("glTexGeni %x %x %i\n", coord, pname, param );
+   gsgErr( GL_INVALID_ENUM );
+}
+
+extern void glTexGenfv( GLenum coord, GLenum pname,
+   const GLfloat * params )
+{
    gsgErr( GL_INVALID_ENUM );
 }
 
@@ -729,5 +802,31 @@ extern void glRasterPos2f( GLfloat x, GLfloat y ) {
 extern void glRasterPos3f( GLfloat x, GLfloat y, GLfloat z ) {
    gsggVect v = { x, y, z };
    gsgRasterPos = v;
+}
+
+extern void glClearStencil( GLint s ) {
+   LIST( i, GLCLEARSTENCIL, s );
+   FORWARD( i, "glClearStencil", s );
+}
+
+extern void glDrawElements( GLenum mode, GLsizei count, GLenum type,
+   const GLvoid * indices )
+{
+   LIST( iiipc, GLDRAWELEMENTS, mode, count, type, indices );
+   FORWARD( esepc, "glDrawElements", mode, count, type, indices );
+}
+
+extern void glAlphaFunc( GLenum func, GLclampf ref ) {
+   LIST( if, GLALPHAFUNC, func, ref );
+   FORWARD( ef, "glAlphaFunc", func, ref );
+}
+
+extern void glIndexi( GLint c ) {
+   glIndexf( c );
+}
+
+extern void glIndexf( GLfloat c ) {
+   LIST( f, GLINDEXF, c );
+   GROUP( f, Index, c );
 }
 

@@ -104,7 +104,20 @@ extern void glEndList() {
       glCallList( save );
 }
 
-int gsglArrSize( int op, GLenum e ) {
+int gsglArrSizeP( int op, GLint i, GLenum e ) {
+   switch (op) {
+      case GLDRAWELEMENTS:
+         switch (e) {
+	    case GL_UNSIGNED_BYTE: return i;
+	    case GL_UNSIGNED_SHORT: return 2*i;
+	 }
+      break;
+   }
+   gsgDie("Unkown ArrSizeP op:%x i:%d e:%x\n", op, i, e );
+   return 0;
+}
+
+int gsglArrSizeF( int op, GLenum e ) {
    switch (op) {
       case GLMATERIALFV: 
          switch (e) {
@@ -119,12 +132,35 @@ int gsglArrSize( int op, GLenum e ) {
          }
       break;
    }
-   gsgDie("Unkonwn ArrSize op:%d e:%x\n", op, e );
+   gsgDie("Unkonwn ArrSizeF op:%d e:%x\n", op, e );
    return 0;
 }
 
+void gsglBytes( gsgList * l, int op, GLint gi, GLenum e,
+   const GLvoid * v ) 
+{
+   int n = gsglArrSizeP( op, gi, e );
+   int m = n/4;
+   int i;
+   GLint iv;
+   GLint *at = (GLint *)v;
+   for (i=0; i < m; ++i) {
+      iv = *(at++);
+      ARRADD( l->ints, GLint, iv );
+   }
+   if ( 0 == n % 4 ) return;
+   // remainder bytes
+   GLubyte *bat = (GLubyte *)at;
+   iv = 0;
+   for (i=0; i < n%4; ++i) {
+      iv <<= 8;
+      iv += *(bat++);
+   }
+   ARRADD( l->ints, GLint, iv );
+}
+
 void gsglFloats( gsgList * l, int op, GLenum e, const GLfloat * v ) {
-   int n = gsglArrSize( op, e );
+   int n = gsglArrSizeF( op, e );
    int i;
    for (i=0; i < n; ++i)
       ARRADD( l->floats, GLfloat, v[i] );
@@ -139,7 +175,7 @@ void gsglExecute( gsgList * l ) {
       switch ( op ) {
 	 case GLMATERIALFV:
 	    glMaterialfv( ip[0], ip[1], fp );
-	    fp += gsglArrSize( op, ip[1] );
+	    fp += gsglArrSizeF( op, ip[1] );
 	    ip += 2;
 	 break;
 	 case GLSHADEMODEL: glShadeModel( *(ip++) ); break;
@@ -171,14 +207,23 @@ void gsglExecute( gsgList * l ) {
 	    glPolygonOffset( fp[0], fp[1] );
 	    fp += 2;
 	 break;
+	 case GLPUSHMATRIX: glPushMatrix(); break;
+	 case GLTRANSLATEF: 
+	    glTranslatef( fp[0], fp[1], fp[2] ); 
+	    fp += 3;
+	 break;
+	 case GLINDEXF: glIndexf( *(fp++) ); break;
+	 case GLPOPMATRIX: glPopMatrix(); break;
 	 default: gsgDie("Unkown gsglExecute op: %d\n", op );
       }
    }
 }
-
+ 
 extern void glCallList( GLuint list ) {
-   if ( list > gsgLists->count )
+   if ( NULL == gsgLists || list > gsgLists->count ) {
+      gsgErr( GL_INVALID_VALUE );
       return;
+   }
    gsglExecute( gsgLists->items[list] );
 }
 
@@ -261,6 +306,19 @@ Bool gsgliifvc( int op, GLint i1, GLint i2, const GLfloat * v ) {
    ARRADD( l->ints, GLint, i1 );
    ARRADD( l->ints, GLint, i2 );
    gsglFloats( l, op, i2, v );
+   return True;
+}
+
+Bool gsgliiipc( int op, GLint i1, GLint i2, GLint i3,
+   const GLvoid * v ) 
+{
+   if ( ! gsglInList() ) return False;
+   gsgList * l = gsgLists->items[ gsglCurrent ];
+   ARRADD( l->ints, GLint, op );
+   ARRADD( l->ints, GLint, i1 );
+   ARRADD( l->ints, GLint, i2 );
+   ARRADD( l->ints, GLint, i3 );
+   gsglBytes( l, op, i2, i3, v );
    return True;
 }
 

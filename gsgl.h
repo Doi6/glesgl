@@ -60,6 +60,11 @@
 #define GLMATERIALF     51
 #define GLLINEWIDTH     52
 #define GLPUSHCLIENTATTRIB 53
+#define GLPOPCLIENTATTRIB 54
+#define GLCLEARSTENCIL  55
+#define GLDRAWELEMENTS  56
+#define GLALPHAFUNC     57
+#define GLINDEXF        58
 
 Bool gsglInList();
 
@@ -77,6 +82,7 @@ Bool gsglii( int, GLint, GLint );
 Bool gsgliif( int, GLint, GLint, GLfloat );
 Bool gsgliifvc( int, GLint, GLint, const GLfloat * );
 Bool gsgliii( int, GLint, GLint, GLint );
+Bool gsgliiipc( int, GLint, GLint, GLint, const GLvoid * );
 Bool gsgliiii( int, GLint, GLint, GLint, GLint );
 Bool gsgliiiiiiii( int, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint );
 #endif // GSGLH

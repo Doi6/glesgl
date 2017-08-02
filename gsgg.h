@@ -20,6 +20,7 @@ GLboolean gsggVertex( GLfloat x, GLfloat y, GLfloat z );
 GLboolean gsggNormal( GLfloat x, GLfloat y, GLfloat z );
 GLboolean gsggColor( GLfloat r, GLfloat g, GLfloat b, GLfloat a );
 GLboolean gsggTex( GLfloat s, GLfloat t, GLfloat p );
+GLboolean gsggIndex( GLfloat c );
 
 GLboolean gsggInGroup();
 
