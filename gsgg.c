@@ -13,7 +13,6 @@ typedef struct {
 } gsggCol;
 
 ARRDEF( gsggCol );
-ARRDEF( GLushort );
 
 typedef struct {
    GLenum mode;
@@ -104,14 +103,12 @@ extern void glBegin( GLenum mode ) {
 }
 
 /// create index array for drawing
-void gsggInds() {
-   ARR( GLushort ) * inds = gsgg->inds;
-   ARR( gsggVect ) * verts = gsgg->verts;
+GLboolean gsggInds( GLenum mode, gsggIndArr * inds, int nverts ) {
    inds->count = 0;
    int i, n;
-   switch ( gsgg->mode ) {
+   switch ( mode ) {
       case GL_QUADS:
-         n = verts->count / 4;
+         n = nverts / 4;
          for (i=0; i < n; ++i) {
 	    ARRADD( inds, GLushort, 4*i );
 	    ARRADD( inds, GLushort, 4*i+1 );
@@ -122,7 +119,7 @@ void gsggInds() {
 	 }
       break;
       case GL_QUAD_STRIP:
-	 n = (verts->count-2) / 2;
+	 n = (nverts-2) / 2;
 	 for (i=0; i < n; ++i) {
 	    ARRADD( inds, GLushort, 2+2*i );
 	    ARRADD( inds, GLushort, 2+2*i-2 );
@@ -133,14 +130,17 @@ void gsggInds() {
 	 }
       break;
       case GL_POLYGON:
-         n = verts->count-2;
+         n = nverts-2;
 	 for (i=0; i<n; ++i) {
 	    ARRADD( inds, GLushort, 0 );
 	    ARRADD( inds, GLushort, i+1 );
 	    ARRADD( inds, GLushort, i+2 );
 	 }
       break;
+      default:
+         return False;
    }
+   return True;
 }
    
 void gsggDraw() {
@@ -157,13 +157,13 @@ void gsggDraw() {
       case GL_QUADS: 
       case GL_QUAD_STRIP: 
       case GL_POLYGON: 
-         gsggInds(); 
+         gsggInds( gsgg->mode, gsgg->inds, gsgg->verts->count ); 
       break;
       default: ind = False;
    }
    if (ind) {
       glDrawElements(GL_TRIANGLES, gsgg->inds->count, 
-         GL_UNSIGNED_SHORT,gsgg->inds->items );
+         GL_UNSIGNED_SHORT, gsgg->inds->items );
    } else {
       glDrawArrays( mode, 0, gsgg->verts->count );
    }
@@ -270,7 +270,7 @@ GLboolean gsggIndex( GLfloat f ) {
    } else if (3.0f == f ) {
       r = 0.0f; g = 1.0f; b=0.0f; a=1.0f;
    } else {
-      gsgUnsupp("Index %g\n", f );
+      gsgUnsupp("Index %g", f );
    }
    gsggidx = f;
    return gsggColor( r, g, b, a );

@@ -6,21 +6,34 @@
 #include "gsga.h"
 #include "gsgg.h"
 #include "gsgl.h"
+#include "gsgg.h"
 
-// name of the library to load
+/// name of the library to load
 #define GSG_GLESLIB "GSG_GLESLIB"
 
-#define GSG_SHOWUNSUPP 1
+/// track errors
+#define GSG_TRACKERROR 1
+
+/// debug level
+/// 0 - none
+/// 1 - unsupported calls
+/// 2 - new gl calls
+/// 3 - errors
+/// 4 - everything
+#define GSG_DEBUGLEVEL 3
 
 char * gsgGLlib  = "libGLESv1_CM.so";
 void * gsgGLlibp = NULL;
 GLenum gsgError = GL_NO_ERROR;
 
-gsggVect gsgRasterPos = {0.0f, 0.0f, 0.0f };
+gsggVect gsgRasterPos = { 0.0f, 0.0f, 0.0f };
 
 ARRDEF( int );
 ARR( int ) * gsgAttrs;
 ARR( int ) * gsgClientAttrs;
+
+GLenum gsgGetError();
+void gsgForwDebug( const char *,  const char *, ... );
 
 void gsgDie( const char * fmt, ... ) {
    va_list args;
@@ -31,26 +44,30 @@ void gsgDie( const char * fmt, ... ) {
 }
 
 extern void gsgUnsupp( const char * fmt, ... ) {
-   if ( GSG_SHOWUNSUPP ) {
+#if 1 <= GSG_DEBUGLEVEL
+   fprintf( stderr, "Unsupported: " );
+   va_list args;
+   va_start( args, fmt );
+   vfprintf( stderr, fmt, args );
+   va_end( args );
+   fprintf( stderr, "\n" );
+#endif
+   gsgErr( GL_INVALID_OPERATION );
+}
+
+void gsgDebug( int level, const char * fmt, ... ) {
+   if ( level <= GSG_DEBUGLEVEL ) {
       va_list args;
       va_start( args, fmt );
       vfprintf( stderr, fmt, args );
       va_end( args );
    }
-   gsgErr( GL_INVALID_OPERATION );
-}
-
-
-void gsgDebug( const char * fmt, ... ) {
-   va_list args;
-   va_start( args, fmt );
-   vfprintf( stderr, fmt, args );
-   va_end( args );
 }
 
 void gsgFree( void * ptr ) {
    free( ptr );
 }
+
 
 inline void gsgErr( GLenum value ) {
    gsgError = value;
@@ -68,7 +85,7 @@ void * gsgDl( const char * name ) {
       if ( ! (gsgGLlibp = dlopen( libname, RTLD_LAZY | RTLD_LOCAL )))
          gsgDie("Could not load library: %s\n", dlerror());
    }
-   gsgDebug("gsgDl: %s\n", name );
+   gsgDebug(2, "gsgDl: %s\n", name );
    void * ret;
    if ( ! (ret = dlsym( gsgGLlibp, name )))
       gsgDie("Could not find symbol: %s\n", dlerror());
@@ -129,7 +146,7 @@ void gsgPushAttrib( GLenum mask ) {
       gsgAttrEnab( GL_STENCIL_TEST );
    }
    if ( ! ((GL_LIGHTING_BIT | GL_ENABLE_BIT) & mask) )
-      gsgUnsupp( "gsgPushAttrib %x\n", mask );
+      gsgUnsupp( "gsgPushAttrib %x", mask );
    glEndList();
 }
    
@@ -141,7 +158,7 @@ void gsgPushClientAttrib( GLenum mask ) {
    int a = glGenLists(1);
    ARRADD( gsgClientAttrs, int, a );
    glNewList(a,GL_COMPILE);
-   gsgUnsupp( "gsgPushClientAttrib %x\n", mask );
+   gsgUnsupp( "gsgPushClientAttrib %x", mask );
    glEndList();
 }
    
@@ -195,7 +212,7 @@ typedef void (*gsgb)( GLboolean );
 typedef void (*gsgbbbb)(GLboolean, GLboolean, GLboolean, GLboolean );
 typedef void (*gsge)( GLenum );
 typedef GLboolean (*gsge_b)( GLenum );
-typedef const GLubyte * (*gsge_uvc)( GLenum );
+typedef const GLubyte * (*gsge_yvc)( GLenum );
 typedef void (*gsgee)( GLenum, GLenum );
 typedef void (*gsgeee)( GLenum, GLenum, GLenum );
 typedef void (*gsgef)( GLenum, GLfloat );
@@ -230,14 +247,38 @@ typedef void (*gsgm)( GLbitfield );
 typedef void (*gsgsuv)(GLsizei, GLuint * );
 typedef void (*gsgsuvc)(GLsizei, const GLuint * );
 typedef GLboolean (*gsgu_b)( GLuint );
-   
-#define FORWARD( sign, name, ... )      \
-   gsgOk();                             \
-   static gsg##sign gsgfw = NULL;       \
-   if (NULL == gsgfw)                   \
-      gsgfw = (gsg##sign)gsgDl( name ); \
-   return (*gsgfw)( __VA_ARGS__ );
 
+
+/// prepare for forwarding call
+#define FORWSTART( sign, name )       \
+   gsgOk();                           \
+   static gsg##sign gsgfw = NULL;     \
+   if (NULL == gsgfw)                 \
+      gsgfw = (gsg##sign)gsgDl(name); 
+
+/// check after forwarding call
+#ifdef GSG_TRACKERROR
+#define FORWFINISH( sign, name, ... )          \
+   gsgError = gsgGetError();                   \
+   if ( GL_NO_ERROR != gsgError )              \
+      gsgForwDebug( #sign, name, ##__VA_ARGS__ ) 
+#else
+#define FORWFINISH( sign, name, ... )
+#endif
+
+   
+/// forward call without result   
+#define FORWARD( sign, name, ... )     \
+   FORWSTART( sign, name );            \
+   (*gsgfw)( __VA_ARGS__ );                      \
+   FORWFINISH( sign, name, ##__VA_ARGS__ );        
+
+/// forward call with result
+#define FORWARDR( rslt, sign, name, ... )   \
+   FORWSTART( sign, name );                 \
+   rslt ret = (*gsgfw)( __VA_ARGS__ );      \
+   FORWFINISH( sign, name, ##__VA_ARGS__ );   \
+   return ret;                              
 
 extern void glMultMatrixf( const GLfloat * m ) {
    LIST( fvc, GLMULTMATRIXF, m );
@@ -262,8 +303,20 @@ extern void glNormalPointer( GLenum type, GLsizei stride,
    FORWARD( espc, "glNormalPointer", type, stride, pointer );
 }
 
+gsggIndArr * gsgIndArr() {
+   static gsggIndArr * ret = NULL;
+   if ( ! ret )
+      ARRINIT( ret, GLushort, 16 );
+   return ret;
+}
+
 extern void glDrawArrays( GLenum mode, GLint first, GLsizei count) {
    LIST( iii, GLDRAWARRAYS, mode, first, count );
+   gsggIndArr * ids = gsgIndArr();
+   if ( gsggInds( mode, ids, count )) {
+      return glDrawElements(GL_TRIANGLES, ids->count, 
+         GL_UNSIGNED_SHORT, ids->items );
+   }
    FORWARD( eis, "glDrawArrays", mode, first, count );
 }
 
@@ -276,14 +329,25 @@ extern void glDisableClientState( GLenum cap ) {
 }
 
 GLenum gsgGetError() {
-   FORWARD( _e, "glGetError" );
-}   
+   // no FORWARD here, no error checking
+   static gsg_e gsgfw = NULL;
+   if ( NULL == gsgfw )
+      gsgfw = (gsg_e)gsgDl("glGetError");
+   return (*gsgfw)();   
+}
 
 extern GLenum glGetError() {
-   GLenum ret = gsgGetError();
+   GLenum ret;
+#ifdef GSG_TRACKERROR
+   ret = gsgError;
+   gsgError = GL_NO_ERROR;
+   return ret;
+#else
+   ret = gsgGetError();
    if (GL_NO_ERROR != gsgError)
       ret = gsgError;
    gsgError = GL_NO_ERROR;   
+#endif 
    return ret;
 }
 
@@ -299,11 +363,25 @@ extern void glLightf( GLenum light, GLenum pname, GLfloat param ) {
 }
 
 extern void glEnable( GLenum cap ) {
-   LIST( i, GLENABLE, cap )
+   switch (cap) {
+      case GL_TEXTURE_GEN_Q:
+      case GL_TEXTURE_GEN_R:
+      case GL_TEXTURE_GEN_S:
+      case GL_TEXTURE_GEN_T:
+         return gsgUnsupp("Enable TEXTURE_GEN");
+   }
+   LIST( i, GLENABLE, cap );
    FORWARD( e, "glEnable", cap );
 }
 
 extern void glDisable( GLenum cap ) {
+   switch (cap) {
+      case GL_TEXTURE_GEN_Q:
+      case GL_TEXTURE_GEN_R:
+      case GL_TEXTURE_GEN_S:
+      case GL_TEXTURE_GEN_T:
+         return gsgUnsupp("Disable TEXTURE_GEN");
+   }
    LIST( i, GLDISABLE, cap );
    FORWARD( e, "glDisable", cap );
 }
@@ -484,7 +562,7 @@ extern void glRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 ) {
 }
 
 const GLubyte * gsgGetString( GLenum name ) {
-   FORWARD( e_uvc, "glGetString", name );
+   FORWARDR( const GLubyte *, e_yvc, "glGetString", name );
 }
 
 extern const GLubyte * glGetString( GLenum name ) {
@@ -511,6 +589,16 @@ extern void glGenTextures( GLsizei n, GLuint * textures ) {
 }
 
 extern void glPixelStorei( GLenum pname, GLint param ) {
+   switch (pname) {
+      case GL_UNPACK_SKIP_ROWS:
+      case GL_UNPACK_SKIP_PIXELS:
+      case GL_UNPACK_SWAP_BYTES:
+      case GL_UNPACK_ROW_LENGTH:
+         if ( 0 != param )
+	    gsgUnsupp( "glPixelStorei %x", pname );
+	    else gsgOk();
+	 return;
+   }
    FORWARD( ei, "glPixelStorei", pname, param );
 }
 
@@ -564,6 +652,16 @@ extern void glTexImage2D( GLenum target, GLint level,
    GLint internalFormat, GLsizei width, GLsizei height, GLint border,
    GLenum format, GLenum type, const GLvoid * data )
 {
+   switch (format) {
+      case GL_RGB: 
+         if (3 == internalFormat)
+	    internalFormat = format;
+      break;
+      case GL_RGBA:
+         if (4 == internalFormat)
+	    internalFormat = format;
+      break;
+   }
    if ( GL_TEXTURE_2D != target )
       gsgDie("only gl_texture_2d supported\n" );
    if (gsglInList())
@@ -585,6 +683,16 @@ extern void glTexSubImage2D( GLenum target, GLint level,
 }
  
 extern void glTexParameteri( GLenum target, GLenum pname, GLint param ) {
+   switch (target) {
+      case GL_TEXTURE_2D: switch (pname) {
+	 case GL_TEXTURE_WRAP_S: 
+	 case GL_TEXTURE_WRAP_T: 
+	    switch (param) {
+	       case GL_CLAMP: param = GL_CLAMP_TO_EDGE; break;
+   	    } 
+	 break;
+      } break;
+   }
    LIST( iii, GLTEXPARAMETERI, target, pname, param );
    FORWARD( eei, "glTexParameteri", target, pname, param ); 
 }
@@ -620,7 +728,7 @@ extern void glDepthFunc( GLenum func ) {
 }
 
 extern void glReadBuffer( GLenum mode ) {
-   gsgDebug("glReadBuffer %x\n", mode );
+   gsgDebug(4,"glReadBuffer %x\n", mode );
    gsgErr( GL_INVALID_ENUM );
 }
 
@@ -653,14 +761,13 @@ extern void glGetIntegerv( GLenum pname, GLint * params ) {
 }
 
 extern void glTexGeni( GLenum coord, GLenum pname, GLint param ) {
-//   gsgDebug("glTexGeni %x %x %i\n", coord, pname, param );
-   gsgErr( GL_INVALID_ENUM );
+   gsgUnsupp( "glTexGen" );
 }
 
 extern void glTexGenfv( GLenum coord, GLenum pname,
    const GLfloat * params )
 {
-   gsgErr( GL_INVALID_ENUM );
+   gsgUnsupp( "glTexGen" );
 }
 
 extern void glPolygonOffset( GLfloat factor, GLfloat units ) {
@@ -669,11 +776,11 @@ extern void glPolygonOffset( GLfloat factor, GLfloat units ) {
 }
 
 extern GLboolean glIsTexture( GLuint texture ) {
-   FORWARD( u_b, "glIsTexture", texture );
+   FORWARDR( GLboolean, u_b, "glIsTexture", texture );
 }
 
 extern GLboolean glIsEnabled( GLenum cap ) {
-   FORWARD( e_b, "glIsEnabled", cap );
+   FORWARDR( GLboolean, e_b, "glIsEnabled", cap );
 }
 
 extern void glStencilFunc( GLenum func, GLint ref, GLuint mask ) {
@@ -765,7 +872,7 @@ extern void glTexEnvi( GLenum target, GLenum pname, GLint param ) {
 }
 
 extern void glPolygonMode( GLenum face, GLenum mode ) {
-   gsgUnsupp( "glPolygonmode unsupported\n" );
+   gsgUnsupp( "glPolygonmode" );
 }
 
 extern void glCopyTexSubImage2D( GLenum target, GLint level, 
@@ -783,11 +890,11 @@ extern void glVertex2fv( const GLfloat * v ) {
 }
 
 extern void glPolygonStipple( const GLubyte * mask ) {
-   gsgUnsupp( "glPolygonstipple\n" );
+   gsgUnsupp( "glPolygonstipple" );
 }
 
 extern void glDrawBuffer( GLenum buf ) {
-   gsgUnsupp( "glDrawBuffer %x\n", buf );
+   gsgUnsupp( "glDrawBuffer %x", buf );
 }
 
 extern void glLineWidth( GLfloat width ) {
@@ -830,3 +937,46 @@ extern void glIndexf( GLfloat c ) {
    GROUP( f, Index, c );
 }
 
+void gsgForwDebug( const char *sign,  const char *name, ... ) {
+   if ( 3 > GSG_DEBUGLEVEL )
+      return;
+   static char fmt[512];
+   const char *sgn = sign;
+   char * at = fmt;
+   char ch;
+   char fc;
+   while ( (ch = *sgn) ) {
+      if (fmt != at)
+         *(at++)=',';
+      *(at++)='%';
+      fc = '\0';
+      switch (ch) {
+	 case 'e': fc = 'x'; break;
+	 case 'i': case 's': fc ='d'; break;
+	 case '_': fc = '_';
+	 case 'o': 
+	 break;
+	 default:
+	    gsgDie("Unkonwn sign: %s\n", sign );
+      }
+      ++sgn;
+      if ('v' == *sgn) {
+	 fc = 'p';
+	 ++sgn;
+	 if ('c' == *sgn)
+	    ++sgn;
+      }
+      if ( ! fc )
+         gsgDie("Unkown sign: %s\n", sign); 
+      if ('_' == fc)
+         break;
+      *(at++) = fc;	 
+   }
+   *at = 0;
+   fprintf( stderr, "gl error on %s(", name );
+   va_list args;
+   va_start( args, name );
+   vfprintf( stderr, fmt, args );
+   va_end( args );
+   fprintf( stderr, "):%x\n", gsgError );
+}

@@ -18,10 +18,15 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=2
-FILE_NAME_0=0;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.c;0;3
-FILE_NAME_1=5827;C;0;16;2;1;0;/usr/include/GL/gl.h;0;3
-FILE_NAME_2=2189;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.c;0;3
+current_page=7
+FILE_NAME_0=3902;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.c;0;3
+FILE_NAME_1=128;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgl.c;0;3
+FILE_NAME_2=591;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgl.h;0;3
+FILE_NAME_3=48;C;0;16;2;1;0;/home/doi/dev/glesgl/gsgg.h;0;3
+FILE_NAME_4=646;C;0;16;2;1;0;/home/doi/dev/glesgl/gsga.h;0;3
+FILE_NAME_5=128;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.h;0;3
+FILE_NAME_6=15123;C;0;16;2;1;0;/usr/include/GL/gl.h;0;3
+FILE_NAME_7=387;C;0;16;2;1;0;/home/doi/dev/glesgl/gsg.c;0;3
 
 [build-menu]
 NF_00_LB=_Make

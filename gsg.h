@@ -7,7 +7,7 @@
 void gsgInit();
 extern void gsgDie( const char * fmt, ... );
 extern void gsgUnsupp( const char * fmt, ... );
-extern void gsgDebug( const char * fmt, ... );
+extern void gsgDebug( int level, const char * fmt, ... );
 extern void * gsgDl( const char * name );
 extern void gsgErr( GLenum value );
 extern void gsgOk();
